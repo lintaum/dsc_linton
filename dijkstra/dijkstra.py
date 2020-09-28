@@ -66,7 +66,7 @@ class Graph:
         return neighbours
 
     def dijkstra(self, source, dest):
-        # assert source in self.vertices, 'Such source node doesn\'t exist'
+        assert source in self.vertices, 'Such source node doesn\'t exist'
         distances = {vertex: inf for vertex in self.vertices}
         previous_vertices = {
             vertex: None for vertex in self.vertices
@@ -76,8 +76,7 @@ class Graph:
         vertices = self.vertices.copy()
 
         while vertices:
-            current_vertex = min(
-                vertices, key=lambda vertex: distances[vertex])
+            current_vertex = min(vertices, key=lambda vertex: distances[vertex])
             vertices.remove(current_vertex)
             if distances[current_vertex] == inf:
                 break
@@ -106,21 +105,30 @@ if __name__ == '__main__':
     from util.random_graph import GraphGen
     from pyprof2calltree import visualize
     import cProfile
+    import re
     print(f'Criando Lista de adjacência...')
-    adjacent_lis = GraphGen().adjacent_lis(2500)
+    gen_graph = GraphGen(max_weigth=50)
+    num_nodes = 36
+    adjacent_lis = gen_graph.adjacent_lis(num_nodes)
+    # print(adjacent_lis)
+    gen_graph.plot()
     print(f'Iniciando Grafo')
     iniciot = time.time()
     graph = Graph(adjacent_lis)
 
-    import re
-    # cProfile.run('re.compile("foo|bar")')
-    cProfile.run('graph.dijkstra(1, 20)')
+
+    # cProfile.run('graph.dijkstra(0, 15)')
     # cProfile.run('graph.dijkstra(1, 20)', filename='dijkstra.cprof')
     # visualize('dijkstra.cprof')
 
-    print(f'Iniciando Dijkstra...')
+    print(f'Iniciando Dijkstra...\n')
     inicio = time.time()
-    print(graph.dijkstra(1, 20))
+    path = graph.dijkstra(0, num_nodes-1)
+
     fim = time.time()
     print(f"Tempo Dijkstra = {str(fim - inicio)}")
     print(f"Tempo Total = {str(fim - iniciot)}")
+    print(path)
+    
+    # gen_graph.plot()
+    gen_graph.plot_path(path)
