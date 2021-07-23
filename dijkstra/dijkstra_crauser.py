@@ -14,7 +14,7 @@ class DijkstraCrauser:
         pass
 
     def get_tent(self, v):
-        """calcula a distância entre o nó e a fonte"""
+        """calcula a distância entre o nó e a fontes"""
         pass
 
     def calc_tent_vizinhos(self, v):
