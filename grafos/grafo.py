@@ -13,7 +13,10 @@ class Relacao():
 
 
 class Grafo():
-    """Conjunto de relações entre os nós"""
+    """Conjunto de relações entre os nós
+        definições do grafo:
+            - Não existe mais de um caminho entre dois nós
+    """
     def __init__(self):
         self.relacoes = []
         self.nos = []
@@ -37,8 +40,11 @@ class Grafo():
         return relacoes
 
     def get_custo(self, no_1, no_2):
-        """retorna o custo entre dois nós"""
+        """retorna o custo entre dois nós vizinhos"""
         custo = 0
+        for relacao in self.get_relacoes_vizinhos(no_1):
+            if relacao.nos[1] is no_2:
+                return relacao.peso
 
     def get_menor_vizinho(self, no):
         """Retorna o vizinho com a menor distância"""

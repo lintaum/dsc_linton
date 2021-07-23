@@ -2,29 +2,69 @@ from grafos.random_graph import GraphGen
 inf = float('inf')
 
 class DijkstraCrauser:
+    """"
+        O menor caminho é formado por todos os menores caminhos do caminho entre a fonte e o destino.
+        Dessa forma, para cada nó basta saber qual o nó anterior na direção da fonte para se descobrir,
+        o menor caminho.
+    """
     def __init__(self, fonte, destino, grafo):
         self.fonte = fonte
         self.destino = destino
         self.grafo = grafo
         self.tents = {}
+        self.estabelecidos = []
+        self.empilhados = [fonte]
+        self.anterior = {}
+        self.inalcançados = []
         self.inicializar()
 
     def inicializar(self):
         self.tents[self.fonte] = 0
+        self.anterior[self.fonte] = 0
         pass
 
 
-    def get_tent(self, v):
-        """calcula a distância entre o nó e a fontes"""
-        pass
+    def update_tent(self, no_v, no_w):
+        """
+        calcula a distância entre o nó e a fonte
+            tent(w) = min {tent(w), tent(v) + c(v,w)}.
+        """
+        if no_w in self.tents.keys():
+            tent_w = self.tents[no_w]
+        else:
+            tent_w = inf
 
-    def calc_tent_vizinhos(self, v):
-        pass
+        custo_v_w = self.grafo.get_custo(no_v, no_w)
+        tent_v = self.tents[no_v]
+        tent_vw = custo_v_w + tent_v
 
-    def dijkstra(self, grafo, fonte, destino):
-        estabelecido = []
-        empilhado = [fonte]
-        inalcançado = []
+        if tent_vw < tent_w:
+            self.anterior[no_w] = no_v
+            self.tents[no_w] = tent_vw
+
+    def dijkstra(self):
+        while len(self.empilhados) > 0:
+            """Coletando o menot tent entre os empilhados"""
+            menor_tent = min(self.empilhados)
+
+            """Empilhando os vizinhos do menor"""
+            for vizinho in self.grafo.get_relacoes_vizinhos(menor_tent):
+                no_vizinho = vizinho.nos[1]
+                self.empilhados.append(no_vizinho)
+                self.update_tent(menor_tent, no_vizinho)
+
+            """Estabelecendo o nó já visitado"""
+            self.empilhados.remove(menor_tent)
+            self.estabelecidos.append(menor_tent)
+
+        menor_caminho = [self.destino]
+        no = self.destino
+        while no is not self.fonte:
+            anterior = self.anterior[no]
+            menor_caminho.append(anterior)
+            no = anterior
+
+        return menor_caminho
 
 
 if __name__ == '__main__':
@@ -33,5 +73,7 @@ if __name__ == '__main__':
     graph_gen.adjacent_lis(nodes=16)
     graph_gen.plot()
 
+    menor_caminho = DijkstraCrauser(0, 10, graph_gen.graph).dijkstra()
+    print("Acabou!!")
     # dijkstra(graph_gen.graph)
 
