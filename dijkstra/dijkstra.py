@@ -106,9 +106,10 @@ if __name__ == '__main__':
     from pyprof2calltree import visualize
     import cProfile
     import re
+
     print(f'Criando Lista de adjacência...')
     gen_graph = GraphGen(max_weigth=50)
-    num_nodes = 36
+    num_nodes = 24
     adjacent_lis = gen_graph.adjacent_lis(num_nodes)
     # print(adjacent_lis)
     gen_graph.plot()
@@ -117,9 +118,9 @@ if __name__ == '__main__':
     graph = Graph(adjacent_lis)
 
 
-    # cProfile.run('graph.dijkstra(0, 15)')
-    # cProfile.run('graph.dijkstra(1, 20)', filename='dijkstra.cprof')
-    # visualize('dijkstra.cprof')
+    cProfile.run('graph.dijkstra(0, 15)')
+    cProfile.run('graph.dijkstra(1, 20)', filename='dijkstra.cprof')
+    visualize('dijkstra.cprof')
 
     print(f'Iniciando Dijkstra...\n')
     inicio = time.time()
