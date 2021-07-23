@@ -13,6 +13,7 @@ class DijkstraCrauser:
         self.tents[self.fonte] = 0
         pass
 
+
     def get_tent(self, v):
         """calcula a distância entre o nó e a fontes"""
         pass
