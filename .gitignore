@@ -1,0 +1,28 @@
+# See the name for you IDE
+*.idea
+# If you are using sqlite3
+*.sqlite3
+*.log
+# Name of your virtuan env
+.saga_venv
+media/
+saga_venv/
+saga_venv_bkp/
+*/.idea/
+**/migrations/*
+saga_proj/out/
+.venv
+.env
+/venv
+*.pyc
+*cprof
+*xlsx
+workspace.xml
+*.sublime-project
+*.sublime-workspace
+autenticacao_moodle
+*__pycache__*
+celerybeat-schedule*
+celerybeat.pid
+staticfiles/
+maintenance_mode_state.txt
