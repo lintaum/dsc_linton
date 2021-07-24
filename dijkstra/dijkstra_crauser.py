@@ -45,15 +45,21 @@ class DijkstraCrauser:
     def dijkstra(self):
         while len(self.empilhados) > 0:
             """Coletando o menot tent entre os empilhados"""
-            menor_tent = min(self.empilhados)
+            menor_tent = None
+            for empilhado in self.empilhados:
+                if menor_tent:
+                    if self.tents[menor_tent] > self.tents[empilhado]:
+                        menor_tent = empilhado
+                else:
+                    menor_tent = empilhado
 
-            """Empilhando os vizinhos do menor"""
+            """Empilhando os vizinhos do menor e calculando o tent deles"""
             for vizinho in self.grafo.get_relacoes_vizinhos(menor_tent):
                 no_vizinho = vizinho.nos[1]
                 self.empilhados.append(no_vizinho)
                 self.update_tent(menor_tent, no_vizinho)
 
-            """Estabelecendo o nó já visitado"""
+            """Estabelecendo o nó já visitado e removendo dos empilhados"""
             self.empilhados.remove(menor_tent)
             self.estabelecidos.append(menor_tent)
 
@@ -64,16 +70,19 @@ class DijkstraCrauser:
             menor_caminho.append(anterior)
             no = anterior
 
+        # Invertendo a ordem da lista
+        menor_caminho = menor_caminho[::-1]
         return menor_caminho
 
 
 if __name__ == '__main__':
     # Gerando o grafo e plotando
-    graph_gen = GraphGen(max_weigth=100)
-    graph_gen.adjacent_lis(nodes=16)
+    graph_gen = GraphGen(max_weigth=10)
+    graph_gen.adjacent_lis(nodes=20)
     graph_gen.plot()
 
-    menor_caminho = DijkstraCrauser(0, 10, graph_gen.graph).dijkstra()
+    menor_caminho = DijkstraCrauser(0, 14, graph_gen.graph).dijkstra()
+    graph_gen.plot_path(menor_caminho)
     print("Acabou!!")
     # dijkstra(graph_gen.graph)
 

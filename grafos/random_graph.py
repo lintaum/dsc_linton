@@ -123,7 +123,7 @@ class GraphGen:
             G.nodes[v]['state']= v
         print('\n')
         for relacao in self.graph.get_relacoes():
-            G.add_edge(relacao[0], relacao[1], weight=relacao[2])
+            G.add_edge(relacao.nos[0], relacao.nos[1], weight=relacao.peso)
             # print(f'Edge ({node[0]}, {node[1]}, {node[2]})')
 
 
