@@ -24,10 +24,10 @@ class GraphGen:
             is_left = pos == 0
             is_botton = last <= L
 
-            # # norte
-            # if not (is_top):
-            #     random.seed(n)
-            #     self.graph.add_relacao(n, n-L, random.randint(1, self.max_weigth))
+            # norte
+            if not (is_top):
+                random.seed(n)
+                self.graph.add_relacao(n, n-L, random.randint(1, self.max_weigth))
 
             # sul
             if not (is_botton):
@@ -39,30 +39,30 @@ class GraphGen:
                 random.seed(n+1)
                 self.graph.add_relacao(n, n+1, random.randint(1, self.max_weigth))
 
-            # # oeste
-            # if not is_left:
-            #     random.seed(n)
-            #     self.graph.add_relacao(n, n-1, random.randint(1, self.max_weigth))
+            # oeste
+            if not is_left:
+                random.seed(n)
+                self.graph.add_relacao(n, n-1, random.randint(1, self.max_weigth))
 
-            # # suldeste
-            # if not (is_rigth or is_botton) and (n+L+1 < nodes):
-            #     random.seed(n+1+1)
-            #     self.graph.add_relacao(n, n+L+1, random.randint(1, self.max_weigth))
-            #
-            # # nordeste
-            # if not (is_top or is_rigth):
-            #     random.seed(n-L+1+1)
-            #     self.graph.add_relacao(n, (n-L)+1, random.randint(1, self.max_weigth))
-            #
-            # # suldoeste
-            # if not (is_botton or is_left):
-            #     random.seed(n+1)
-            #     self.graph.add_relacao(n, (n+L)-1, random.randint(1, self.max_weigth))
-            #
-            # # noroeste
-            # if not (is_top or is_left):
-            #     random.seed((n-L+1))
-            #     self.graph.add_relacao(n, (n-L)-1, random.randint(1, self.max_weigth))
+            # suldeste
+            if not (is_rigth or is_botton) and (n+L+1 < nodes):
+                random.seed(n+1+1)
+                self.graph.add_relacao(n, n+L+1, random.randint(1, self.max_weigth))
+
+            # nordeste
+            if not (is_top or is_rigth):
+                random.seed(n-L+1+1)
+                self.graph.add_relacao(n, (n-L)+1, random.randint(1, self.max_weigth))
+
+            # suldoeste
+            if not (is_botton or is_left):
+                random.seed(n+1)
+                self.graph.add_relacao(n, (n+L)-1, random.randint(1, self.max_weigth))
+
+            # noroeste
+            if not (is_top or is_left):
+                random.seed((n-L+1))
+                self.graph.add_relacao(n, (n-L)-1, random.randint(1, self.max_weigth))
 
             self.graph.add_no(n)
         # self.graph = graph
