@@ -1,3 +1,4 @@
+import time
 from grafos.random_graph import GraphGen
 inf = float('inf')
 
@@ -69,8 +70,6 @@ class DijkstraCrauser:
             no_vizinho = vizinho.nos[1]
             # TODO: talvez isso dê merda
             if no_vizinho not in self.estabelecidos:
-                if no_vizinho not in self.empilhados:
-                    self.empilhados[no_vizinho] = inf
                 self.update_tent(no, no_vizinho)
 
     def update_criterio_out(self):
@@ -94,7 +93,7 @@ class DijkstraCrauser:
                 aprovados.append(no)
         return aprovados
 
-    def dijkstra(self):
+    def dijkstra(self, debug):
         while len(self.empilhados) > 0:
             """Coletando o menor tent entre os empilhados"""
             menor_tent = self.get_menor_tent()
@@ -105,23 +104,31 @@ class DijkstraCrauser:
             """Estabelecendo o nó já visitado e removendo dos empilhados"""
             self.empilhados.pop(menor_tent)
             self.estabelecidos.append(menor_tent)
-
-            aprovados = self.get_aprovados_out()
-            print(f"Estabelecido {menor_tent}")
+            # if debug:
+            #     print(f"Estabelecido {menor_tent}")
 
         return self.get_menor_caminho()
 
 
-if __name__ == '__main__':
+def main(debug=False, num_nos=120):
     # Gerando o grafo e plotando
-    num_nos = 9
+    # num_nos = 120
     graph_gen = GraphGen(max_weigth=10)
     graph_gen.adjacent_lis(nodes=num_nos)
-    graph_gen.plot()
+    # graph_gen.plot()
 
+    start = time.time()
     # Calculando o menor caminho
-    menor_caminho = DijkstraCrauser(0, num_nos-1, graph_gen.graph).dijkstra()
-    graph_gen.plot_path(menor_caminho)
-    print("Acabou!!")
+    menor_caminho = DijkstraCrauser(0, num_nos-1, graph_gen.graph).dijkstra(debug)
+    end = time.time()
+    custo = graph_gen.graph.get_custo_caminho(menor_caminho)
+    if debug:
+        graph_gen.plot_path(menor_caminho)
+        print(f"Tempo Sequencial: {end - start}")
+        print(f"Custo do caminho: {custo}")
     # dijkstra(graph_gen.graph)
+    return menor_caminho, custo
 
+
+if __name__ == '__main__':
+    main()

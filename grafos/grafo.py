@@ -11,6 +11,9 @@ class Relacao():
         self.nos = (no_1, no_2, peso)
         self.peso = peso
 
+    def __str__(self, *args, **kwargs):
+        return f"{self.nos[0]}->{self.nos[1]}"
+
 
 class Grafo():
     """Conjunto de relações entre os nós
@@ -43,7 +46,7 @@ class Grafo():
         """retorna o custo entre dois nós vizinhos"""
         custo = 0
         for relacao in self.get_relacoes_vizinhos(no_1):
-            if relacao.nos[1] is no_2:
+            if relacao.nos[1] == no_2:
                 return relacao.peso
 
     def get_menor_vizinho(self, no):
@@ -75,7 +78,38 @@ class Grafo():
         relacoes = self.get_relacoes_no(no)
         relacoes_vizinhas = []
         for relacao in relacoes:
-            if relacao.nos[0] is no:
+            if relacao.nos[0] == no:
                 relacoes_vizinhas.append(relacao)
         return relacoes_vizinhas
+
+    def get_relacoes_vizinhos_in(self, no):
+        """Retorna as relações que chegam em um nó"""
+        relacoes = self.get_relacoes_no(no)
+        relacoes_vizinhas = []
+        for relacao in relacoes:
+            if relacao.nos[1] == no:
+                relacoes_vizinhas.append(relacao)
+        # print(f"Vizinhos in: {relacoes_vizinhas} do nó {no}")
+        return relacoes_vizinhas
+
+    def get_menor_vizinho_in(self, no):
+        """Retorna o vizinho que chega com a menor distância"""
+        relacoes = self.get_relacoes_vizinhos_in(no)
+        menor = None
+        for vizinho in relacoes:
+            if menor:
+                if vizinho.peso < menor.peso:
+                    menor = vizinho
+            else:
+                menor = vizinho
+        return menor
+
+    def get_custo_caminho(self, caminho):
+        custo = 0
+        no_1 = None
+        for no in caminho:
+            if no_1:
+                custo+=self.get_custo(no_1, no)
+            no_1=no
+        return custo
 
