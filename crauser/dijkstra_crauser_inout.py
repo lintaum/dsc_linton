@@ -23,12 +23,13 @@ def update_tent(no_v, no_w, empilhados, distancia, anterior, custo_vizinho):
         distancia[no_w] = dist_vw
 
 
-def remover_no(no, vizinhos, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho):
+def remover_no(no, vizinhos, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, return_dict):
     """Empilhando os vizinhos do noe calculando o tent deles"""
     for no_vizinho in vizinhos:
         """Se ainda não foi estabelecido, inicializar ou atualizar"""
         update_tent(no, no_vizinho, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho)
-
+    return_dict[no] = vizinhos, distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos
+    return distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos
 
 class DijkstraCrauser:
     """"
@@ -37,6 +38,8 @@ class DijkstraCrauser:
         o menor caminho.
     """
     def __init__(self, fonte, destino, grafo):
+        self.total_aprovados_in = []
+        self.total_aprovados_out = []
         self.fonte = fonte
         self.destino = destino
         self.grafo = grafo
@@ -148,8 +151,6 @@ class DijkstraCrauser:
                 return True
         return False
 
-    total_aprovados_in = []
-    total_aprovados_out = []
     def criar_analise(self):
         # Resultados IN
         count_in = 0
@@ -223,6 +224,10 @@ class DijkstraCrauser:
 
     def dijkstra(self, paralelo=True, debug=False):
         count = 0
+        import multiprocessing
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        jobs = []
 
         while self.tem_empilhado():
             # print(f"Aprovados {self.get_aprovados_out()}")
@@ -235,10 +240,13 @@ class DijkstraCrauser:
             if debug:
                 # print(f"Aprovados IN {len(aprovados_in)}: {aprovados_in}")
                 # print(f"Aprovados OUT {len(aprovados_out)}: {aprovados_out}")
-
                 self.total_aprovados_in.append(aprovados_in)
                 self.total_aprovados_out.append(aprovados_out)
-            result = {}
+
+            if paralelo:
+                result = manager.dict()
+            else:
+                result = {}
             for aprovado in aprovados:
                 vizinhos = self.grafo.get_relacoes_vizinhos(aprovado)
                 distancia_vizinhos = {}
@@ -257,8 +265,14 @@ class DijkstraCrauser:
                         vizinhos_validados.append(vizinho)
 
                 distancia_vizinhos[no] = self.distancia[no]
-                remover_no(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho)
-                result[aprovado] = [vizinhos_validados, distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos]
+
+                if paralelo:
+                    p = multiprocessing.Process(target=remover_no, args=(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result))
+                    jobs.append(p)
+                    p.start()
+                    p.join()
+                else:
+                    remover_no(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
 
             """Estabelecendo o nó já visitado, removendo dos empilhados e atualizando os buffers"""
             for aprovado in aprovados:
@@ -272,12 +286,6 @@ class DijkstraCrauser:
                         self.distancia[vizinho] = distancia_vizinhos[vizinho]
                         self.empilhados[vizinho] = empilhado_vizinhos[vizinho]
                         self.anterior[vizinho] = anterior_vizinhos[vizinho]
-
-                # if paralelo:
-                #     p = Process(target=remover_no, args=(self.grafo, aprovado, self.estabelecidos, self.empilhados, self.distancia, self.anterior))
-                #     p.start()
-                #     p.join()
-                # else:
 
         if debug:
             print(f"\nTotal de iterações: {count}")
@@ -299,19 +307,32 @@ def main(num_nos=120, debug=False):
 
     # Calculando o menor caminho
 
-    # start = time.time()
-    # menor_caminho = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=True)
-    # end = time.time()
-    # tempo = end - start
-    # print(f"Tempo Paralelo: {end - start} | Fator Objetivo: {tempo/tempo_objetivo}")
-
     start = time.time()
-    menor_caminho = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=False, debug=debug)
+    menor_caminho_p = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=True, debug=debug)
     end = time.time()
     tempo = end - start
-    custo = graph_gen.graph.get_custo_caminho(menor_caminho)
+    custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
+    if debug:
+        print(f"Tempo Paralelo: {end - start} | Fator Objetivo: {tempo/tempo_objetivo}")
+
+    start = time.time()
+    menor_caminho_s = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=False, debug=debug)
+    end = time.time()
+    tempo = end - start
+    custo_s = graph_gen.graph.get_custo_caminho(menor_caminho_s)
     if debug:
         print(f"Tempo Sequencial: {end - start} | Fator Objetivo: {tempo/tempo_objetivo}")
+
+    menor_caminho = menor_caminho_p
+
+    if custo_s != custo_p:
+        print("\nResultado sequencial e paralelo diferente")
+        import sys
+        sys.exit()
+
+
+    custo = graph_gen.graph.get_custo_caminho(menor_caminho)
+    if debug:
         print(f"Custo do caminho: {custo}")
         graph_gen.plot_path(menor_caminho)
 
@@ -321,7 +342,7 @@ def main(num_nos=120, debug=False):
 if __name__ == '__main__':
     from dijkstra.dijkstra_crauser import main as main_crauser
     num_nos = 1024
-    debug = False
+    debug = True
     if debug:
         caminho1, custo1 = main(num_nos=num_nos, debug=debug,)
         caminho2, custo2 = main_crauser(num_nos=num_nos, debug=debug)
