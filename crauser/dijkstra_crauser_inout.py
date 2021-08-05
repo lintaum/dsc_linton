@@ -10,27 +10,30 @@ def update_tent(no_v, no_w, empilhados, distancia, anterior, custo_vizinho):
         tent(w) = min {tent(w), tent(v) + c(v,w)}.
     """
     """Marca o nó como empilhado"""
-    if no_w not in empilhados:
-        empilhados.append(no_w)
-    # Distancia atual
-    dist_w = distancia[no_w]
+    atualizou = False
     # Distância a partir do vizinho
-    custo_v_w = custo_vizinho[no_w]
-    dist_v = distancia[no_v]
-    dist_vw = custo_v_w + dist_v
+    dist_vw = custo_vizinho + distancia[no_v]
     # Se distancia a partir do vizinho é menor, atualiza
-    if dist_vw < dist_w:
+    if dist_vw < distancia[no_w]:
+        atualizou = True
         anterior[no_w] = no_v
         distancia[no_w] = dist_vw
 
+    return atualizou, no_v, dist_vw
+
 
 def remover_no(no, vizinhos, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, return_dict):
-    """Empilhando os vizinhos do noe calculando o tent deles"""
+    """Empilhando os vizinhos do no e calculando o tent deles"""
+
+    result_vizinho = []
     for no_vizinho in vizinhos:
         """Se ainda não foi estabelecido, inicializar ou atualizar"""
-        update_tent(no, no_vizinho, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho)
-    return_dict[no] = vizinhos, distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos
-    return distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos
+        atualizou, anterior, distancia = update_tent(no, no_vizinho, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho[no_vizinho])
+        result_vizinho.append([no_vizinho, atualizou, anterior, distancia])
+
+    return_dict[no] = result_vizinho
+    return distancia_vizinhos, anterior_vizinhos
+
 
 class DijkstraCrauser:
     """"
@@ -220,17 +223,17 @@ class DijkstraCrauser:
         count = 0
         import multiprocessing
         manager = multiprocessing.Manager()
-        return_dict = manager.dict()
         jobs = []
 
         while self.tem_empilhado():
             # print(f"Aprovados {self.get_aprovados_out()}")
             count += 1
             """Coletando os nós que podem ser removidos (dist=tent) em paralelo"""
-            aprovados_in = self.get_aprovados_in()
+            # aprovados_in = self.get_aprovados_in()
             aprovados_out = self.get_aprovados_out()
-            aprovados = set(aprovados_in + aprovados_out)
-            # aprovados = aprovados_out
+            # aprovados = set(aprovados_in + aprovados_out)
+            aprovados = aprovados_out
+            # aprovados = aprovados_in
             # if debug:
                 # print(f"Aprovados IN {len(aprovados_in)}: {aprovados_in}")
                 # print(f"Aprovados OUT {len(aprovados_out)}: {aprovados_out}")
@@ -241,6 +244,7 @@ class DijkstraCrauser:
                 result = manager.dict()
             else:
                 result = {}
+
             for aprovado in aprovados:
                 vizinhos = self.grafo.get_relacoes_vizinhos(aprovado)
                 distancia_vizinhos = {}
@@ -252,9 +256,11 @@ class DijkstraCrauser:
                 for no, vizinho in vizinhos:
                     """Se o vizinho já foi estabelecido, já achou o menor caminho então não faz nada"""
                     if not self.estabelecidos[vizinho] == 1:
+                        # vai ser alterado
                         distancia_vizinhos[vizinho] = self.distancia[vizinho]
-                        empilhado_vizinhos.append(vizinho)
                         anterior_vizinhos[vizinho] = self.anterior[vizinho]
+
+                        empilhado_vizinhos.append(vizinho)
                         custo_vizinho[vizinho] = self.grafo.get_custo(no, vizinho)
                         vizinhos_validados.append(vizinho)
 
@@ -268,19 +274,19 @@ class DijkstraCrauser:
                 else:
                     remover_no(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
 
-            """Estabelecendo o nó já visitado, removendo dos empilhados e atualizando os buffers"""
+            """Estabelecendo o nó já visitado, removendo dos empilhados e recuperando dados dos buffers"""
             for aprovado in aprovados:
                 self.empilhados.remove(aprovado)
-                self.estabelecidos[aprovado]=1
+                self.estabelecidos[aprovado] = 1
 
-                vizinhos, distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos = result[aprovado]
+                for vizinho, atualizou, anterior, distancia in result[aprovado]:
+                    if atualizou:
+                        if distancia < self.distancia[vizinho]:
+                            self.distancia[vizinho] = distancia
+                            self.anterior[vizinho] = anterior
 
-                for vizinho in vizinhos:
-                    if distancia_vizinhos[vizinho] < self.distancia[vizinho]:
-                        self.distancia[vizinho] = distancia_vizinhos[vizinho]
+                    if (vizinho not in self.empilhados) and self.estabelecidos[vizinho]==0:
                         self.empilhados.append(vizinho)
-                        self.anterior[vizinho] = anterior_vizinhos[vizinho]
-
         if debug:
             print(f"\nTotal de iterações: {count}")
             # self.criar_analise()
@@ -290,7 +296,6 @@ class DijkstraCrauser:
 def main(num_nos=120, debug=False):
     tempo_objetivo = 425 * 0.000001
     # Gerando o grafo e plotando
-
 
     # do stuff
     no_inicio = 0
@@ -307,7 +312,7 @@ def main(num_nos=120, debug=False):
     tempo = end - start
     custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
     if debug:
-        print(f"Tempo Paralelo: {tempo} | Fator Objetivo: {tempo/tempo_objetivo}")
+        print(f"Tempo Paralelo: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo)}")
 
     menor_caminho = menor_caminho_p
 
@@ -317,7 +322,7 @@ def main(num_nos=120, debug=False):
     tempo = end - start
     custo_s = graph_gen.graph.get_custo_caminho(menor_caminho_s)
     if debug:
-        print(f"Tempo Sequencial: {tempo} | Fator Objetivo: {tempo/tempo_objetivo}")
+        print(f"Tempo Sequencial: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo)}")
 
     menor_caminho = menor_caminho_s
 

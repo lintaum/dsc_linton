@@ -124,7 +124,7 @@ def main(debug=False, num_nos=120):
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if debug:
         graph_gen.plot_path(menor_caminho)
-        print(f"Tempo Base: {end - start}")
+        print(f"Tempo Base: {round(end - start,2)}s")
         print(f"Custo do caminho: {custo}")
     # dijkstra(graph_gen.graph)
     return menor_caminho, custo

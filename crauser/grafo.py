@@ -1,20 +1,3 @@
-# class Relacao():
-#     """Define uma relação entre dois nós do grafos com um peso"""
-#     def __init__(self, no_origem, no_destino, peso):
-#         self.nos = (no_origem, no_destino)
-#         self.peso = peso
-#
-#     def get(self):
-#         return self.nos
-#
-#     def set(self, no_1, no_2, peso):
-#         self.nos = (no_1, no_2, peso)
-#         self.peso = peso
-#
-#     def __str__(self, *args, **kwargs):
-#         return f"{self.nos[0]}->{self.nos[1]}"
-
-
 class Grafo():
     """Conjunto de relações entre os nós
         definições do grafo:
