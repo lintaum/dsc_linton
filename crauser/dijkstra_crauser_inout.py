@@ -10,7 +10,8 @@ def update_tent(no_v, no_w, empilhados, distancia, anterior, custo_vizinho):
         tent(w) = min {tent(w), tent(v) + c(v,w)}.
     """
     """Marca o nó como empilhado"""
-    empilhados[no_w] = 1
+    if no_w not in empilhados:
+        empilhados.append(no_w)
     # Distancia atual
     dist_w = distancia[no_w]
     # Distância a partir do vizinho
@@ -48,28 +49,29 @@ class DijkstraCrauser:
         self.criterio_in = {}
         # self.treshold_out = inf
         # Memoria Compartilhada
-        self.estabelecidos = Array("i", self.grafo.nos)
-        self.empilhados = Array("i", self.grafo.nos)
-        self.distancia = Array("i", self.grafo.nos)
-        self.anterior = Array("i", self.grafo.nos)
+        # self.estabelecidos = Array("i", self.grafo.nos)
+        # self.empilhados = Array("i", self.grafo.nos)
+        # self.distancia = Array("i", self.grafo.nos)
+        # self.anterior = Array("i", self.grafo.nos)
 
         self.estabelecidos = {i:0 for i in range(0, len(self.grafo.nos))}
         self.empilhados = {i:0 for i in range(0, len(self.grafo.nos))}
+        self.empilhados = []
         self.distancia = {i:100000 for i in range(0, len(self.grafo.nos))}
         self.anterior = {i:0 for i in range(0, len(self.grafo.nos))}
         self.inicializar()
 
     def inicializar(self):
         self.anterior[self.fonte] = 0
+        self.empilhados.append(self.fonte)
+        self.criterio_in[self.fonte] = 0
         for no in range(len(self.grafo.nos)):
             self.estabelecidos[no] = 0
-            self.empilhados[no] = 0
+            # self.empilhados[no] = 0
             self.distancia[no] = 100000000
             self.menor_dist[no] = 100
 
-        self.empilhados[self.fonte] = 1
         self.distancia[self.fonte] = 0
-        self.criterio_in[self.fonte] = 0
 
     def get_menor_caminho(self):
         """Coletando o menor caminho, lendo do destino até a fonte"""
@@ -89,17 +91,16 @@ class DijkstraCrauser:
     def update_criterio_out(self):
         """o(v) = tent(v) + min{c(v, u) : (v, u) E E} """
         for no in self.grafo.nos:
-            if self.empilhados[no] == 1:
+            if no in self.empilhados:
                 self.criterio_out[no] = self.distancia[no] + self.grafo.get_menor_vizinho(no)
 
     def update_treshold_out(self):
         """L = min{tent(u) + c(u, z) : u is queued and (u, z) E E} """
         treshold_out = inf
         for no in self.empilhados:
-            if self.empilhados[no] == 1:
-                treshold_no = self.distancia[no] + self.grafo.get_menor_vizinho(no)
-                if treshold_no < treshold_out:
-                    treshold_out = treshold_no
+            treshold_no = self.distancia[no] + self.grafo.get_menor_vizinho(no)
+            if treshold_no < treshold_out:
+                treshold_out = treshold_no
         return treshold_out
 
     def get_aprovados_out(self):
@@ -107,42 +108,36 @@ class DijkstraCrauser:
         self.update_criterio_out()
         treshold_out = self.update_treshold_out()
         aprovados = []
-        for no in self.grafo.nos:
-            if self.empilhados[no] == 1:
-                if self.distancia[no] <= treshold_out:
-                    aprovados.append(no)
+        for no in self.empilhados:
+            if self.distancia[no] <= treshold_out:
+                aprovados.append(no)
         return aprovados
 
     def update_criterio_in(self):
         """ i(v) = tent(v) - min{c(u,v) : (u,v) E E}  """
-        for no in self.grafo.nos:
-            if self.empilhados[no] == 1:
-                self.criterio_in[no] = self.distancia[no] - self.grafo.get_menor_vizinho_in(no)
+        for no in self.empilhados:
+            self.criterio_in[no] = self.distancia[no] - self.grafo.get_menor_vizinho_in(no)
 
     def update_treshold_in(self):
         """M = min {tent(u) : u is queued} """
         self.menor_dist = inf
-        for no in self.grafo.nos:
-            if self.empilhados[no] == 1:
-                if self.distancia[no] < self.menor_dist:
-                    self.menor_dist = self.distancia[no]
+        for no in self.empilhados:
+            if self.distancia[no] < self.menor_dist:
+                self.menor_dist = self.distancia[no]
 
     def get_aprovados_in(self):
         """i(v) <= M"""
         self.update_criterio_in()
         self.update_treshold_in()
         aprovados = []
-        for no in self.grafo.nos:
-            if self.empilhados[no] == 1:
-                # if self.criterio_in[no] <= self.menor_dist[no]:
-                if self.criterio_in[no] <= self.menor_dist:
-                    aprovados.append(no)
+        for no in self.empilhados:
+            if self.criterio_in[no] <= self.menor_dist:
+                aprovados.append(no)
         return aprovados
 
     def tem_empilhado(self):
-        for no in self.grafo.nos:
-            if self.empilhados[no] == 1:
-                return True
+        if len(self.empilhados) > 0:
+            return True
         return False
 
     def tem_sem_estabelecer(self):
@@ -221,7 +216,6 @@ class DijkstraCrauser:
         print(f"Resultados IN: Média={round(media_in)}; Mínimo={min_in}; Máximo={max_in}")
         print(f"Resultados OUT: Média={round(media_out)}; Mínimo={min_out}; Máximo={max_out}")
 
-
     def dijkstra(self, paralelo=True, debug=False):
         count = 0
         import multiprocessing
@@ -231,17 +225,17 @@ class DijkstraCrauser:
 
         while self.tem_empilhado():
             # print(f"Aprovados {self.get_aprovados_out()}")
-            count+=1
+            count += 1
             """Coletando os nós que podem ser removidos (dist=tent) em paralelo"""
             aprovados_in = self.get_aprovados_in()
             aprovados_out = self.get_aprovados_out()
             aprovados = set(aprovados_in + aprovados_out)
             # aprovados = aprovados_out
-            if debug:
+            # if debug:
                 # print(f"Aprovados IN {len(aprovados_in)}: {aprovados_in}")
                 # print(f"Aprovados OUT {len(aprovados_out)}: {aprovados_out}")
-                self.total_aprovados_in.append(aprovados_in)
-                self.total_aprovados_out.append(aprovados_out)
+                # self.total_aprovados_in.append(aprovados_in)
+                # self.total_aprovados_out.append(aprovados_out)
 
             if paralelo:
                 result = manager.dict()
@@ -250,7 +244,7 @@ class DijkstraCrauser:
             for aprovado in aprovados:
                 vizinhos = self.grafo.get_relacoes_vizinhos(aprovado)
                 distancia_vizinhos = {}
-                empilhado_vizinhos = {}
+                empilhado_vizinhos = []
                 anterior_vizinhos = {}
                 custo_vizinho = {}
                 vizinhos_validados = []
@@ -259,7 +253,7 @@ class DijkstraCrauser:
                     """Se o vizinho já foi estabelecido, já achou o menor caminho então não faz nada"""
                     if not self.estabelecidos[vizinho] == 1:
                         distancia_vizinhos[vizinho] = self.distancia[vizinho]
-                        empilhado_vizinhos[vizinho] = self.empilhados[vizinho]
+                        empilhado_vizinhos.append(vizinho)
                         anterior_vizinhos[vizinho] = self.anterior[vizinho]
                         custo_vizinho[vizinho] = self.grafo.get_custo(no, vizinho)
                         vizinhos_validados.append(vizinho)
@@ -276,7 +270,7 @@ class DijkstraCrauser:
 
             """Estabelecendo o nó já visitado, removendo dos empilhados e atualizando os buffers"""
             for aprovado in aprovados:
-                self.empilhados[aprovado]=0
+                self.empilhados.remove(aprovado)
                 self.estabelecidos[aprovado]=1
 
                 vizinhos, distancia_vizinhos, empilhado_vizinhos, anterior_vizinhos = result[aprovado]
@@ -284,12 +278,12 @@ class DijkstraCrauser:
                 for vizinho in vizinhos:
                     if distancia_vizinhos[vizinho] < self.distancia[vizinho]:
                         self.distancia[vizinho] = distancia_vizinhos[vizinho]
-                        self.empilhados[vizinho] = empilhado_vizinhos[vizinho]
+                        self.empilhados.append(vizinho)
                         self.anterior[vizinho] = anterior_vizinhos[vizinho]
 
         if debug:
             print(f"\nTotal de iterações: {count}")
-            self.criar_analise()
+            # self.criar_analise()
         return self.get_menor_caminho()
 
 
@@ -313,7 +307,9 @@ def main(num_nos=120, debug=False):
     tempo = end - start
     custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
     if debug:
-        print(f"Tempo Paralelo: {end - start} | Fator Objetivo: {tempo/tempo_objetivo}")
+        print(f"Tempo Paralelo: {tempo} | Fator Objetivo: {tempo/tempo_objetivo}")
+
+    menor_caminho = menor_caminho_p
 
     start = time.time()
     menor_caminho_s = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=False, debug=debug)
@@ -321,9 +317,9 @@ def main(num_nos=120, debug=False):
     tempo = end - start
     custo_s = graph_gen.graph.get_custo_caminho(menor_caminho_s)
     if debug:
-        print(f"Tempo Sequencial: {end - start} | Fator Objetivo: {tempo/tempo_objetivo}")
+        print(f"Tempo Sequencial: {tempo} | Fator Objetivo: {tempo/tempo_objetivo}")
 
-    menor_caminho = menor_caminho_p
+    menor_caminho = menor_caminho_s
 
     if custo_s != custo_p:
         print("\nResultado sequencial e paralelo diferente")
