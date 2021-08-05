@@ -34,6 +34,29 @@ def remover_no(no, vizinhos, empilhado_vizinhos, distancia_vizinhos, anterior_vi
     return_dict[no] = result_vizinho
     return distancia_vizinhos, anterior_vizinhos
 
+def remover_no_aprovado(grafo, aprovado, estabelecidos, distancia, anterior, result):
+    vizinhos = grafo.get_relacoes_vizinhos(aprovado)
+    distancia_vizinhos = {}
+    empilhado_vizinhos = []
+    anterior_vizinhos = {}
+    custo_vizinho = {}
+    vizinhos_validados = []
+
+    for no, vizinho in vizinhos:
+        """Se o vizinho já foi estabelecido, já achou o menor caminho então não faz nada"""
+        if not estabelecidos[vizinho] == 1:
+            # vai ser alterado
+            distancia_vizinhos[vizinho] = distancia[vizinho]
+            anterior_vizinhos[vizinho] = anterior[vizinho]
+
+            empilhado_vizinhos.append(vizinho)
+            custo_vizinho[vizinho] = grafo.get_custo(no, vizinho)
+            vizinhos_validados.append(vizinho)
+
+    distancia_vizinhos[no] = distancia[no]
+
+    remover_no(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
+
 
 class DijkstraCrauser:
     """"
@@ -229,10 +252,10 @@ class DijkstraCrauser:
             # print(f"Aprovados {self.get_aprovados_out()}")
             count += 1
             """Coletando os nós que podem ser removidos (dist=tent) em paralelo"""
-            # aprovados_in = self.get_aprovados_in()
+            aprovados_in = self.get_aprovados_in()
             aprovados_out = self.get_aprovados_out()
-            # aprovados = set(aprovados_in + aprovados_out)
-            aprovados = aprovados_out
+            aprovados = set(aprovados_in + aprovados_out)
+            # aprovados = aprovados_out
             # aprovados = aprovados_in
             # if debug:
                 # print(f"Aprovados IN {len(aprovados_in)}: {aprovados_in}")
@@ -245,34 +268,21 @@ class DijkstraCrauser:
             else:
                 result = {}
 
+            process = []
             for aprovado in aprovados:
-                vizinhos = self.grafo.get_relacoes_vizinhos(aprovado)
-                distancia_vizinhos = {}
-                empilhado_vizinhos = []
-                anterior_vizinhos = {}
-                custo_vizinho = {}
-                vizinhos_validados = []
-
-                for no, vizinho in vizinhos:
-                    """Se o vizinho já foi estabelecido, já achou o menor caminho então não faz nada"""
-                    if not self.estabelecidos[vizinho] == 1:
-                        # vai ser alterado
-                        distancia_vizinhos[vizinho] = self.distancia[vizinho]
-                        anterior_vizinhos[vizinho] = self.anterior[vizinho]
-
-                        empilhado_vizinhos.append(vizinho)
-                        custo_vizinho[vizinho] = self.grafo.get_custo(no, vizinho)
-                        vizinhos_validados.append(vizinho)
-
-                distancia_vizinhos[no] = self.distancia[no]
+                # remover_no_aprovado(self.grafo, aprovado, self.estabelecidos, self.distancia, self.anterior, result)
 
                 if paralelo:
-                    p = multiprocessing.Process(target=remover_no, args=(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result))
+                    p = multiprocessing.Process(target=remover_no_aprovado, args=(self.grafo, aprovado, self.estabelecidos, self.distancia, self.anterior, result))
                     jobs.append(p)
                     p.start()
-                    p.join()
+                    # p.join()
+                    process.append(p)
                 else:
-                    remover_no(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
+                    remover_no_aprovado(self.grafo, aprovado, self.estabelecidos, self.distancia, self.anterior, result)
+
+            for p in process:
+                p.join()
 
             """Estabelecendo o nó já visitado, removendo dos empilhados e recuperando dados dos buffers"""
             for aprovado in aprovados:
@@ -293,7 +303,7 @@ class DijkstraCrauser:
         return self.get_menor_caminho()
 
 
-def main(num_nos=120, debug=False):
+def main(num_nos=120, debug=False, grafico=False):
     tempo_objetivo = 425 * 0.000001
     # Gerando o grafo e plotando
 
@@ -331,10 +341,10 @@ def main(num_nos=120, debug=False):
         import sys
         sys.exit()
 
-
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if debug:
         print(f"Custo do caminho: {custo}")
+    if grafico:
         graph_gen.plot_path(menor_caminho)
 
     return menor_caminho, custo
@@ -344,9 +354,10 @@ if __name__ == '__main__':
     from dijkstra.dijkstra_crauser import main as main_crauser
     num_nos = 1024
     debug = True
+    grafico = False
     if debug:
-        caminho1, custo1 = main(num_nos=num_nos, debug=debug,)
-        caminho2, custo2 = main_crauser(num_nos=num_nos, debug=debug)
+        caminho1, custo1 = main(num_nos=num_nos, debug=debug, grafico=grafico)
+        caminho2, custo2 = main_crauser(num_nos=num_nos, debug=debug, grafico=grafico)
 
         if custo2 != custo1:
                 print(f"Num nós {num_nos}")
@@ -354,6 +365,8 @@ if __name__ == '__main__':
                 print(f"Custo Ref {custo2}")
                 print(f"Caminho Out {caminho1}")
                 print(f"Caminho Ref {caminho2}")
+                import sys
+                sys.exit()
         else:
             print(f"Passou {num_nos}")
     else:
@@ -370,6 +383,8 @@ if __name__ == '__main__':
                 print(f"Custo Ref {custo2}")
                 print(f"Caminho Out {caminho1}")
                 print(f"Caminho Ref {caminho2}")
+                import sys
+                sys.exit()
             else:
                 print(f"Passou {num_nos}")
 

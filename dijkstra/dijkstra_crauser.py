@@ -110,7 +110,7 @@ class DijkstraCrauser:
         return self.get_menor_caminho()
 
 
-def main(debug=False, num_nos=120):
+def main(debug=False, num_nos=120, grafico=False):
     # Gerando o grafo e plotando
     # num_nos = 120
     graph_gen = GraphGen(max_weigth=10)
@@ -123,9 +123,10 @@ def main(debug=False, num_nos=120):
     end = time.time()
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if debug:
-        graph_gen.plot_path(menor_caminho)
         print(f"Tempo Base: {round(end - start,2)}s")
         print(f"Custo do caminho: {custo}")
+    if grafico:
+        graph_gen.plot_path(menor_caminho)
     # dijkstra(graph_gen.graph)
     return menor_caminho, custo
 
