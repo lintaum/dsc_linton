@@ -1,6 +1,7 @@
 import time
 from crauser.random_graph import GraphGen
 from multiprocessing import Process, Array
+from fibheap import *
 inf = float('inf')
 
 
@@ -34,6 +35,7 @@ def remover_no(no, vizinhos, empilhado_vizinhos, distancia_vizinhos, anterior_vi
     return_dict[no] = result_vizinho
     return distancia_vizinhos, anterior_vizinhos
 
+
 def remover_no_aprovado(grafo, aprovado, estabelecidos, distancia, anterior, result):
     vizinhos = grafo.get_relacoes_vizinhos(aprovado)
     distancia_vizinhos = {}
@@ -54,7 +56,6 @@ def remover_no_aprovado(grafo, aprovado, estabelecidos, distancia, anterior, res
             vizinhos_validados.append(vizinho)
 
     distancia_vizinhos[no] = distancia[no]
-
     remover_no(no, vizinhos_validados, empilhado_vizinhos, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
 
 
@@ -84,6 +85,7 @@ class DijkstraCrauser:
         self.empilhados = {i:0 for i in range(0, len(self.grafo.nos))}
         self.empilhados = []
         self.distancia = {i:100000 for i in range(0, len(self.grafo.nos))}
+        self.distancia_pilha = makefheap()
         self.anterior = {i:0 for i in range(0, len(self.grafo.nos))}
         self.inicializar()
 
@@ -108,54 +110,39 @@ class DijkstraCrauser:
             menor_caminho.append(anterior)
             no = anterior
             # print(f"Construindo menor Caminho: {menor_caminho}")
-
         # Invertendo a ordem da lista
         menor_caminho = menor_caminho[::-1]
 
         return menor_caminho
 
-    def update_criterio_out(self):
-        """o(v) = tent(v) + min{c(v, u) : (v, u) E E} """
-        for no in self.grafo.nos:
-            if no in self.empilhados:
-                self.criterio_out[no] = self.distancia[no] + self.grafo.get_menor_vizinho(no)
-
-    def update_treshold_out(self):
-        """L = min{tent(u) + c(u, z) : u is queued and (u, z) E E} """
-        treshold_out = inf
-        for no in self.empilhados:
-            treshold_no = self.distancia[no] + self.grafo.get_menor_vizinho(no)
-            if treshold_no < treshold_out:
-                treshold_out = treshold_no
-        return treshold_out
-
     def get_aprovados_out(self):
         """O nó pode ser removido quando a distância dele até a fonte não pode ser menor"""
-        self.update_criterio_out()
-        treshold_out = self.update_treshold_out()
+
+        treshold_out = inf
         aprovados = []
+        for no in self.empilhados:
+            """o(v) = tent(v) + min{c(v, u) : (v, u) E E} - pode ser executado em paralelo"""
+            # self.criterio_out[no] = self.distancia[no] + self.grafo.get_menor_vizinho(no)
+            treshold_no = self.distancia[no] + self.grafo.get_menor_vizinho(no)
+            if treshold_no < treshold_out:
+                """L = min{tent(u) + c(u, z) : u is queued and (u, z) E E} """
+                treshold_out = treshold_no
+
         for no in self.empilhados:
             if self.distancia[no] <= treshold_out:
                 aprovados.append(no)
         return aprovados
 
-    def update_criterio_in(self):
-        """ i(v) = tent(v) - min{c(u,v) : (u,v) E E}  """
-        for no in self.empilhados:
-            self.criterio_in[no] = self.distancia[no] - self.grafo.get_menor_vizinho_in(no)
-
-    def update_treshold_in(self):
-        """M = min {tent(u) : u is queued} """
+    def get_aprovados_in(self):
+        aprovados = []
         self.menor_dist = inf
         for no in self.empilhados:
+            """ i(v) = tent(v) - min{c(u,v) : (u,v) E E}  """
+            self.criterio_in[no] = self.distancia[no] - self.grafo.get_menor_vizinho_in(no)
+            """M = min {tent(u) : u is queued} """
             if self.distancia[no] < self.menor_dist:
                 self.menor_dist = self.distancia[no]
-
-    def get_aprovados_in(self):
         """i(v) <= M"""
-        self.update_criterio_in()
-        self.update_treshold_in()
-        aprovados = []
         for no in self.empilhados:
             if self.criterio_in[no] <= self.menor_dist:
                 aprovados.append(no)
@@ -252,11 +239,11 @@ class DijkstraCrauser:
             # print(f"Aprovados {self.get_aprovados_out()}")
             count += 1
             """Coletando os nós que podem ser removidos (dist=tent) em paralelo"""
-            aprovados_in = self.get_aprovados_in()
-            aprovados_out = self.get_aprovados_out()
-            aprovados = set(aprovados_in + aprovados_out)
-            # aprovados = aprovados_out
+            # aprovados_in = self.get_aprovados_in()
             # aprovados = aprovados_in
+            aprovados_out = self.get_aprovados_out()
+            aprovados = aprovados_out
+            # aprovados = set(aprovados_in + aprovados_out)
             # if debug:
                 # print(f"Aprovados IN {len(aprovados_in)}: {aprovados_in}")
                 # print(f"Aprovados OUT {len(aprovados_out)}: {aprovados_out}")
@@ -270,13 +257,10 @@ class DijkstraCrauser:
 
             process = []
             for aprovado in aprovados:
-                # remover_no_aprovado(self.grafo, aprovado, self.estabelecidos, self.distancia, self.anterior, result)
-
                 if paralelo:
                     p = multiprocessing.Process(target=remover_no_aprovado, args=(self.grafo, aprovado, self.estabelecidos, self.distancia, self.anterior, result))
                     jobs.append(p)
                     p.start()
-                    # p.join()
                     process.append(p)
                 else:
                     remover_no_aprovado(self.grafo, aprovado, self.estabelecidos, self.distancia, self.anterior, result)
