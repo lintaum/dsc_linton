@@ -100,6 +100,7 @@ class DijkstraCrauser:
             self.menor_dist[no] = 100
 
         self.distancia[self.fonte] = 0
+        fheappush(self.distancia_pilha, (0, 0))
 
     def get_menor_caminho(self):
         """Coletando o menor caminho, lendo do destino até a fonte"""
@@ -118,16 +119,15 @@ class DijkstraCrauser:
     def get_aprovados_out(self):
         """O nó pode ser removido quando a distância dele até a fonte não pode ser menor"""
 
-        treshold_out = inf
         aprovados = []
+        criterio_out_pilha = makefheap()
         for no in self.empilhados:
             """o(v) = tent(v) + min{c(v, u) : (v, u) E E} - pode ser executado em paralelo"""
-            # self.criterio_out[no] = self.distancia[no] + self.grafo.get_menor_vizinho(no)
-            treshold_no = self.distancia[no] + self.grafo.get_menor_vizinho(no)
-            if treshold_no < treshold_out:
-                """L = min{tent(u) + c(u, z) : u is queued and (u, z) E E} """
-                treshold_out = treshold_no
+            """L = min{tent(u) + c(u, z) : u is queued and (u, z) E E} """
+            criterio_out = self.distancia[no] + self.grafo.get_menor_vizinho(no)
+            fheappush(criterio_out_pilha, criterio_out)
 
+        treshold_out = criterio_out_pilha.extract_min().key
         for no in self.empilhados:
             if self.distancia[no] <= treshold_out:
                 aprovados.append(no)
@@ -232,7 +232,8 @@ class DijkstraCrauser:
     def dijkstra(self, paralelo=True, debug=False):
         count = 0
         import multiprocessing
-        manager = multiprocessing.Manager()
+        if paralelo:
+            manager = multiprocessing.Manager()
         jobs = []
 
         while self.tem_empilhado():
@@ -277,6 +278,7 @@ class DijkstraCrauser:
                     if atualizou:
                         if distancia < self.distancia[vizinho]:
                             self.distancia[vizinho] = distancia
+                            fheappush(self.distancia_pilha, (distancia, vizinho))
                             self.anterior[vizinho] = anterior
 
                     if (vizinho not in self.empilhados) and self.estabelecidos[vizinho]==0:
@@ -300,15 +302,14 @@ def main(num_nos=120, debug=False, grafico=False):
 
     # Calculando o menor caminho
 
-    start = time.time()
-    menor_caminho_p = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=True, debug=debug)
-    end = time.time()
-    tempo = end - start
-    custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
-    if debug:
-        print(f"Tempo Paralelo: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo)}")
-
-    menor_caminho = menor_caminho_p
+    # start = time.time()
+    # menor_caminho_p = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=True, debug=debug)
+    # end = time.time()
+    # tempo = end - start
+    # custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
+    # if debug:
+    #     print(f"Tempo Paralelo: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo)}")
+    # menor_caminho = menor_caminho_p
 
     start = time.time()
     menor_caminho_s = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=False, debug=debug)
@@ -320,10 +321,10 @@ def main(num_nos=120, debug=False, grafico=False):
 
     menor_caminho = menor_caminho_s
 
-    if custo_s != custo_p:
-        print("\nResultado sequencial e paralelo diferente")
-        import sys
-        sys.exit()
+    # if custo_s != custo_p:
+    #     print("\nResultado sequencial e paralelo diferente")
+    #     import sys
+    #     sys.exit()
 
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if debug:
