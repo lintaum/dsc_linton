@@ -94,7 +94,9 @@ class DijkstraCrauser:
         return aprovados
 
     def dijkstra(self, debug):
+        count = 0
         while len(self.empilhados) > 0:
+            count += 1
             """Coletando o menor tent entre os empilhados"""
             menor_tent = self.get_menor_tent()
 
@@ -106,7 +108,7 @@ class DijkstraCrauser:
             self.estabelecidos.append(menor_tent)
             # if debug:
             #     print(f"Estabelecido {menor_tent}")
-
+        print(f"Número de iterações base: {count}")
         return self.get_menor_caminho()
 
 

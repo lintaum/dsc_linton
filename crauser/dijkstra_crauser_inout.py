@@ -1,3 +1,4 @@
+import warnings
 import time
 from crauser.random_graph import GraphGen
 from multiprocessing import Process, Array
@@ -229,8 +230,8 @@ class DijkstraCrauser:
         print(f"Vezes que o OUT estava contido no IN: {num_out_dentro}")
         print(f"Vezes que o OUT e IN ambos possuiam pelo menos 1 elemento diferentes: {num_diff}")
         print(f"Máximo de nós ativos simultaneamente: {max(self.total_empilhados)}")
-        print(f"Resultados IN: Média={round(media_in)}; Mínimo={min_in}; Máximo={max_in}")
-        print(f"Resultados OUT: Média={round(media_out)}; Mínimo={min_out}; Máximo={max_out}")
+        print(f"Resultados IN: Média={round(media_in)}; Máximo={max_in}")
+        print(f"Resultados OUT: Média={round(media_out)}; Máximo={max_out}")
 
     def dijkstra(self, paralelo=True, debug=False):
         count = 0
@@ -244,16 +245,16 @@ class DijkstraCrauser:
             count += 1
             """Coletando os nós que podem ser removidos (dist=tent) em paralelo"""
             aprovados_in = self.get_aprovados_in()
-            # aprovados = aprovados_in
+            aprovados = aprovados_in
             aprovados_out = self.get_aprovados_out()
             # aprovados = aprovados_out
             aprovados = set(aprovados_in + aprovados_out)
-            # if debug:
+            if debug:
                 # print(f"Aprovados IN {len(aprovados_in)}: {aprovados_in}")
                 # print(f"Aprovados OUT {len(aprovados_out)}: {aprovados_out}")
-                # self.total_aprovados_in.append(aprovados_in)
-                # self.total_aprovados_out.append(aprovados_out)
-                # self.total_empilhados.append(len(self.empilhados))
+                self.total_aprovados_in.append(aprovados)
+                self.total_aprovados_out.append(aprovados_out)
+                self.total_empilhados.append(len(self.empilhados))
 
             if paralelo:
                 result = manager.dict()
@@ -288,17 +289,17 @@ class DijkstraCrauser:
                             elif distancia < self.distancia[vizinho]:
                                 self.distancia[vizinho] = distancia
                                 self.anterior[vizinho] = anterior
-
+                        if self.estabelecidos[vizinho]==0:
                             if (vizinho not in self.empilhados):
                                 self.empilhados.append(vizinho)
         if debug:
             print(f"\nTotal de iterações: {count}")
-            # self.criar_analise()
+            self.criar_analise()
         return self.get_menor_caminho()
 
 
 def main(num_nos=120, debug=False, grafico=False):
-    tempo_objetivo = 425 * 0.000001
+    tempo_objetivo = 425 * 0.001
     # Gerando o grafo e plotando
 
     # do stuff
@@ -310,14 +311,14 @@ def main(num_nos=120, debug=False, grafico=False):
 
     # Calculando o menor caminho
 
-    start = time.time()
-    menor_caminho_p = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=True, debug=debug)
-    end = time.time()
-    tempo = end - start
-    custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
-    if debug:
-        print(f"Tempo Paralelo: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo)}")
-    menor_caminho = menor_caminho_p
+    # start = time.time()
+    # menor_caminho_p = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=True, debug=debug)
+    # end = time.time()
+    # tempo = end - start
+    # custo_p = graph_gen.graph.get_custo_caminho(menor_caminho_p)
+    # if debug:
+    #     print(f"Tempo Paralelo: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo, 2)}")
+    # menor_caminho = menor_caminho_p
 
     start = time.time()
     menor_caminho_s = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(paralelo=False, debug=debug)
@@ -325,14 +326,14 @@ def main(num_nos=120, debug=False, grafico=False):
     tempo = end - start
     custo_s = graph_gen.graph.get_custo_caminho(menor_caminho_s)
     if debug:
-        print(f"Tempo Sequencial: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo)}")
+        print(f"Tempo Sequencial: {round(tempo,2)}s | Fator Objetivo: {round(tempo/tempo_objetivo, 2)}")
 
     menor_caminho = menor_caminho_s
 
-    if custo_s != custo_p:
-        print("\nResultado sequencial e paralelo diferente")
-        import sys
-        sys.exit()
+    # if custo_s != custo_p:
+    #     print("\nResultado sequencial e paralelo diferente")
+    #     import sys
+    #     sys.exit()
 
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if debug:
@@ -345,12 +346,13 @@ def main(num_nos=120, debug=False, grafico=False):
 
 if __name__ == '__main__':
     from dijkstra.dijkstra_crauser import main as main_crauser
-    num_nos = 1024
+    num_nos = 35
+    print(f"Num nós {num_nos}")
     debug = True
-    grafico = False
+    grafico = True
     if debug:
         caminho1, custo1 = main(num_nos=num_nos, debug=debug, grafico=grafico)
-        caminho2, custo2 = main_crauser(num_nos=num_nos, debug=debug, grafico=grafico)
+        caminho2, custo2 = main_crauser(num_nos=num_nos, debug=debug, grafico=False)
 
         if custo2 != custo1:
                 print(f"Num nós {num_nos}")
@@ -382,4 +384,4 @@ if __name__ == '__main__':
                 print(f"Passou {num_nos}")
 
         if erro > 0:
-            print(f"Foram encontrados {erro} erros")
+            warnings.warn(f"Foram encontrados {erro} erros")
