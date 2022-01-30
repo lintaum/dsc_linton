@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
     print(f'Criando Lista de adjacência...')
     gen_graph = GraphGen(max_weigth=10)
-    num_nodes = 120
+    num_nodes = 10
     adjacent_lis = gen_graph.adjacent_lis(num_nodes)
     # print(adjacent_lis)
     # gen_graph.plot()

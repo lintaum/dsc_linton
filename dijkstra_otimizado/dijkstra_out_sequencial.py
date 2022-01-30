@@ -208,10 +208,10 @@ if __name__ == '__main__':
         print(f"Caminho Ref {caminho2}")
 
 
-    num_nos = 128
+    num_nos = 10
     print(f"Num nós {num_nos}")
     debug = True
-    grafico = False
+    grafico = True
     if debug:
         caminho1, custo1 = main(num_nos=num_nos, debug=debug, grafico=grafico)
         caminho2, custo2 = main_crauser(num_nos=num_nos, debug=debug, grafico=False)

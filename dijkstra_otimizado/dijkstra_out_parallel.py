@@ -79,7 +79,6 @@ class DijkstraCrauser:
         self.grafo = grafo
         self.menor_dist = {}
         self.criterio_out = {}
-        self.criterio_in = {}
         # self.treshold_out = inf
         # Memoria Compartilhada
         # self.estabelecidos = Array("i", self.grafo.nos)
@@ -99,11 +98,8 @@ class DijkstraCrauser:
     def inicializar(self):
         self.anterior[self.fonte] = 0
         self.empilhados.append(self.fonte)
-        self.criterio_in[self.fonte] = 0
         for no in range(len(self.grafo.nos)):
             self.estabelecidos[no] = 0
-            # self.empilhados[no] = 0
-            # self.distancia[no] = 100000000
             self.menor_dist[no] = 100
 
         self.distancia[self.fonte] = 0

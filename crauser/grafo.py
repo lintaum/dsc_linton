@@ -95,10 +95,8 @@ class Grafo():
 
     def get_custo_caminho(self, caminho):
         custo = 0
-        no_1 = None
-        for no in caminho:
-            if no_1:
-                custo+=self.get_custo(no_1, no)
-            no_1=no
+        for idx in range(len(caminho)):
+            if idx < len(caminho)-1:
+                custo = custo + self.get_custo(caminho[idx], caminho[idx+1])
         return custo
 
