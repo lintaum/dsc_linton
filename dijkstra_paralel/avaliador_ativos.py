@@ -33,7 +33,7 @@ class Avaliador_ativos():
         return self.ativos[endereco].criterio
 
     def inserir(self, distancia, menor_vizinho, endereco):
-        self.ativos[endereco] = NoAtivo(menor_vizinho, distancia)
+        self.ativos[endereco] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia)
 
     def remover_no(self, endereco):
         self.ativos.pop(endereco)
@@ -47,11 +47,11 @@ class Avaliador_ativos():
 
     def get_criterio_out(self):
         # TODO: Melhorar para o paralelismo
-        menor = float('inf')
+        criterio = float('inf')
         for endereco, no in self.ativos.items():
-            if no.criterio < menor:
-                menor = no.criterio
-        return menor
+            if no.criterio < criterio:
+                criterio = no.criterio
+        return criterio
 
     def get_aprovados(self, criterio):
         # TODO: Melhorar para o paralelismo

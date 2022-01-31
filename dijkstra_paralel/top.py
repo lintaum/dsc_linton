@@ -3,6 +3,7 @@ from dijkstra_paralel.avaliador_ativos import Avaliador_ativos
 from dijkstra_paralel.formador_caminhos import FormadorCaminho
 from dijkstra_paralel.gerenciador_memoria import Memoria, MemoriaInt
 from dijkstra_paralel.localizador_vizinhos_validos import LocalizadorVizinhosValidos
+from dijkstra_otimizado.dijkstra_out_sequencial import main as main_sequencial
 from dijkstra.dijkstra_crauser import main as main_crauser
 from crauser.random_graph import GraphGen
 import warnings
@@ -43,12 +44,15 @@ class DijkstraParallel():
 
     def calcular_caminho(self, fonte, destino):
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
-        self.avaliador_ativos.inserir(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[0])
+        self.avaliador_ativos.inserir(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
         while self.avaliador_ativos.tem_ativo():
             aprovados = self.avaliador_ativos.get_aprovados(self.avaliador_ativos.get_criterio_out())
+            # print(aprovados)
+            buffer = {}
             for aprovado in aprovados:
                 relacoes_aprovado = self.lvv.get_relacoes(aprovado)
                 distancia_v = self.avaliador_ativos.get_distancia(aprovado)
+
                 for relacao in relacoes_aprovado:
                     endereco_w = relacao[0]
                     custo_vw = relacao[1]
@@ -61,13 +65,24 @@ class DijkstraParallel():
                                                                                         distancia_v=distancia_v,
                                                                                       )
 
-                    menor_vizinho = self.lvv.get_menor_vizinho(fonte)[0]
+                    menor_vizinho = self.lvv.get_menor_vizinho(endereco_w)[1]
                     if atualizou:
+                        # buffer[aprovado, endereco_w] = [endereco_w, anterior, distancia_vw, menor_vizinho]
                         self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
                         self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
+
+            # for [aprovado, endereco_w], [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer.items():
+            #     if self.avaliador_ativos.get_distancia(endereco_w) > distancia_vw and self.mem_estabelecidos.ler(endereco_w)==0:
+            #         self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
+            #         self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
+            # dist(43) = 17
+            # dist(50) = 25
+            # dist(49) = 20 ?
+            # dist(42) = 18
+
+            for aprovado in aprovados:
                 self.avaliador_ativos.remover_no(aprovado)
                 self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
-
 
             # print("Foi")
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)
@@ -90,19 +105,17 @@ def main(num_nos=10, debug=False, grafico=False):
     return menor_caminho, custo
 
 if __name__ == '__main__':
-    teste = False
-    num_nos = 51
-    # caminho, custo = main(num_nos=5, debug=True, grafico=False)
-    grafico = True
+    teste = True
+    grafico = False
+    num_nos = 128
     inicio = 5
-    # num_iteracoes = 5
 
     if not teste:
         inicio = num_nos - 1
 
     for idx in range(inicio, num_nos):
         caminho, custo = main(num_nos=idx, debug=False, grafico=grafico)
-        caminho2, custo2 = main_crauser(num_nos=idx, debug=False, grafico=grafico)
+        caminho2, custo2 = main_sequencial(num_nos=idx, debug=False, grafico=grafico)
 
         if custo != custo2:
             warnings.warn(f"Foram encontrados erros: num de nós {idx}")

@@ -3,7 +3,7 @@ import warnings
 import time
 from crauser.random_graph import GraphGen
 from multiprocessing import Process, Array
-from analisador import criar_analise
+from dijkstra_otimizado.analisador import criar_analise
 from fibheap import *
 from dijkstra.dijkstra_crauser import main as main_crauser
 inf = float('inf')
@@ -137,6 +137,7 @@ class DijkstraCrauser:
             """Coletando os nós que podem ser removidos (dist=tent) em paralelo"""
             aprovados_out = self.get_aprovados_out()
             aprovados = aprovados_out
+            # print(aprovados)
             if debug:
                 self.total_aprovados_out.append(aprovados_out)
                 self.total_empilhados.append(len(self.empilhados))
