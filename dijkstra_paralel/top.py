@@ -43,15 +43,27 @@ class DijkstraParallel():
             self.lvv.inicializar_mem(self.mem_relacoes, self.mem_obstaculos, self.mem_estabelecidos)
 
     def calcular_caminho(self, fonte, destino):
+        # Inicializando com a fonte
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
         self.avaliador_ativos.inserir(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
+
+        # Busca até o avaliador de ativos estar vázio
         while self.avaliador_ativos.tem_ativo():
-            aprovados = self.avaliador_ativos.get_aprovados(self.avaliador_ativos.get_criterio_out())
+            aprovados_distancia = self.avaliador_ativos.get_aprovados(self.avaliador_ativos.get_criterio_out())
+
+            # relacoes = self.lvv.get_relacoes_aprovados(aprovados_distancia)
+
             # print(aprovados)
             buffer = {}
-            for aprovado in aprovados:
+
+            for aprovado, distancia_v in aprovados_distancia:
                 relacoes_aprovado = self.lvv.get_relacoes(aprovado)
-                distancia_v = self.avaliador_ativos.get_distancia(aprovado)
+                # relacoes_aprovado = relacoes[aprovado]
+
+                # estabelecendo o nó aprovado
+                self.avaliador_ativos.remover_no(aprovado)
+                self.lvv.remover_do_buffer(aprovado)
+                self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
 
                 for relacao in relacoes_aprovado:
                     endereco_w = relacao[0]
@@ -67,26 +79,14 @@ class DijkstraParallel():
 
                     menor_vizinho = self.lvv.get_menor_vizinho(endereco_w)[1]
                     if atualizou:
-                        # buffer[aprovado, endereco_w] = [endereco_w, anterior, distancia_vw, menor_vizinho]
-                        self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
-                        self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
+                        buffer[aprovado, endereco_w] = [endereco_w, anterior, distancia_vw, menor_vizinho]
 
-            # for [aprovado, endereco_w], [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer.items():
-            #     if self.avaliador_ativos.get_distancia(endereco_w) > distancia_vw and self.mem_estabelecidos.ler(endereco_w)==0:
-            #         self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
-            #         self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
-            # dist(43) = 17
-            # dist(50) = 25
-            # dist(49) = 20 ?
-            # dist(42) = 18
+            for [aprovado, endereco_w], [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer.items():
+                if self.avaliador_ativos.get_distancia(endereco_w) > distancia_vw:
+                    self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
+                    self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
 
-            for aprovado in aprovados:
-                self.avaliador_ativos.remover_no(aprovado)
-                self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
-
-            # print("Foi")
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)
-
 
 
 def main(num_nos=10, debug=False, grafico=False):
@@ -121,6 +121,7 @@ if __name__ == '__main__':
             warnings.warn(f"Foram encontrados erros: num de nós {idx}")
             print(f"Referência {caminho2, custo2}")
             print(f"Modelo {caminho, custo}")
+            break
 
         else:
-            print("Passou!")
+            print(f"Passou {idx}!")

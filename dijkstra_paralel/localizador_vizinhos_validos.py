@@ -15,6 +15,9 @@ class LocalizadorVizinhosValidos():
         obstaculos = self.mem_obstaculos.ler(no)
         self.local_buffer[no] = [relacoes, obstaculos]
 
+    def remover_do_buffer(self, no):
+        self.local_buffer.pop(no)
+
     def get_menor_vizinho(self, no):
         """Retorna o menor vizinho que não é obstáculo"""
         if no in self.local_buffer.keys():
@@ -43,3 +46,9 @@ class LocalizadorVizinhosValidos():
         else:
             self.buscar_memoria(no)
             return self.get_relacoes(no)
+
+    def get_relacoes_aprovados(self, aprovados_distancia):
+        relacoes = {}
+        for aprovado, distancia_v in aprovados_distancia:
+            relacoes[aprovado] = self.get_relacoes(aprovado)
+        return relacoes

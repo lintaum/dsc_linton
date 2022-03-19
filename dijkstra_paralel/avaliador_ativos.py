@@ -54,11 +54,10 @@ class Avaliador_ativos():
         return criterio
 
     def get_aprovados(self, criterio):
-        # TODO: Melhorar para o paralelismo
         aprovados = []
         for endereco, no in self.ativos.items():
             if no.distancia <= criterio:
-                aprovados.append(endereco)
+                aprovados.append([endereco, self.get_distancia(endereco)])
         return aprovados
 
 
