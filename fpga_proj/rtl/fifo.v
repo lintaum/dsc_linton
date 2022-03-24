@@ -27,7 +27,11 @@ module fifo
         input write_enable,
         input read_enable,
         //outputs
+<<<<<<< HEAD
         output [DATA_WIDTH-1:0] read_data
+=======
+        output reg [DATA_WIDTH-1:0] read_data
+>>>>>>> aea9752 (Versão funcionando)
         
        );
 
