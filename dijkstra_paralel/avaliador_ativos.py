@@ -2,10 +2,11 @@ inf = float('inf')
 
 class NoAtivo():
     """Estrutura básica de um nó ativo"""
-    def __init__(self, menor_vizinho, distancia):
+    def __init__(self, menor_vizinho, distancia, endereco):
         self.menor_vizinho = menor_vizinho
         self.distancia = distancia
         self.criterio = distancia + menor_vizinho
+        self.endereco = endereco
 
     def __str__(self):
         return f"Vizinho: {self.menor_vizinho}, Distancia: {self.distancia}, Criterio: {self.criterio}"
@@ -17,23 +18,20 @@ class NoAtivo():
 
 class Avaliador_ativos():
     """Insere e remove os nós ativos, calcula o critério de classificação e seleciona os aprovados"""
+    BUFF_SIZE = 12
+
     def __init__(self):
-        # self.ativos = {endereco: NoAtivo(menor_vizinho, 0)}
         self.ativos = {}
+        self.aprovados = {}
+        self.buff_count = 0
 
     def get_distancia(self, endereco):
         if endereco in self.ativos.keys():
             return self.ativos[endereco].distancia
         return inf
 
-    def get_menor_vizinho(self, endereco):
-        return self.ativos[endereco].menor_vizinho
-
-    def get_criterio_no(self, endereco):
-        return self.ativos[endereco].criterio
-
     def inserir(self, distancia, menor_vizinho, endereco):
-        self.ativos[endereco] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia)
+        self.ativos[endereco] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia, endereco=endereco)
 
     def remover_no(self, endereco):
         self.ativos.pop(endereco)

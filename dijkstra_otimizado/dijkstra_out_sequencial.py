@@ -174,7 +174,7 @@ def main(num_nos=120, debug=False, grafico=False):
     # Gerando o grafo e plotando
 
     # do stuff
-    no_inicio = 0
+    no_inicio = 3
     no_destino = num_nos-1
     graph_gen = GraphGen(max_weigth=10)
     graph_gen.adjacent_lis(nodes=num_nos)

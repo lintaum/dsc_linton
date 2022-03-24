@@ -47,24 +47,22 @@ class DijkstraParallel():
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
         self.avaliador_ativos.inserir(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
 
+
         # Busca até o avaliador de ativos estar vázio
         while self.avaliador_ativos.tem_ativo():
             aprovados_distancia = self.avaliador_ativos.get_aprovados(self.avaliador_ativos.get_criterio_out())
 
-            # relacoes = self.lvv.get_relacoes_aprovados(aprovados_distancia)
-
-            # print(aprovados)
             buffer = {}
 
             for aprovado, distancia_v in aprovados_distancia:
                 relacoes_aprovado = self.lvv.get_relacoes(aprovado)
-                # relacoes_aprovado = relacoes[aprovado]
 
-                # estabelecendo o nó aprovado
+                # Estabelecendo o nó aprovado
                 self.avaliador_ativos.remover_no(aprovado)
                 self.lvv.remover_do_buffer(aprovado)
                 self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
 
+                # Atualizando os vizinhos do nó aprovado
                 for relacao in relacoes_aprovado:
                     endereco_w = relacao[0]
                     custo_vw = relacao[1]
@@ -79,10 +77,20 @@ class DijkstraParallel():
 
                     menor_vizinho = self.lvv.get_menor_vizinho(endereco_w)[1]
                     if atualizou:
-                        buffer[aprovado, endereco_w] = [endereco_w, anterior, distancia_vw, menor_vizinho]
+                        buffer[aprovado, endereco_w] = [endereco_w, anterior, distancia_vw, menor_vizinho, distancia_w]
 
-            for [aprovado, endereco_w], [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer.items():
-                if self.avaliador_ativos.get_distancia(endereco_w) > distancia_vw:
+            buffer_menor_distancia = {}
+            for [endereco_w, anterior, distancia_vw, menor_vizinho, distancia_w] in buffer.values():
+                # a nova distância deve ser comparada com a distância global, pois outro nó pode ter atualizado com uma
+                # distância menor do que a atual
+                if endereco_w in buffer_menor_distancia.keys():
+                    if buffer_menor_distancia[endereco_w] > distancia_w:
+                        buffer_menor_distancia[endereco_w] = distancia_w
+                else:
+                    buffer_menor_distancia[endereco_w] = distancia_w
+
+                if buffer_menor_distancia[endereco_w] > distancia_vw:
+                    buffer_menor_distancia[endereco_w] = distancia_vw
                     self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
                     self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
 
@@ -91,7 +99,7 @@ class DijkstraParallel():
 
 def main(num_nos=10, debug=False, grafico=False):
     # num_nos = 5
-    fonte = 0
+    fonte = 3
     destino = num_nos-1
 
     top = DijkstraParallel(num_nos=num_nos, max_num_vizinhos=6)
