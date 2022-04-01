@@ -50,7 +50,7 @@ class DijkstraParallel():
 
         # Busca até o avaliador de ativos estar vázio
         while self.avaliador_ativos.tem_ativo():
-            aprovados_distancia = self.avaliador_ativos.get_aprovados(self.avaliador_ativos.get_criterio_out())
+            aprovados_distancia = self.avaliador_ativos.get_aprovados()
 
             buffer = {}
 

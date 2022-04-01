@@ -51,7 +51,8 @@ class Avaliador_ativos():
                 criterio = no.criterio
         return criterio
 
-    def get_aprovados(self, criterio):
+    def get_aprovados(self):
+        criterio = self.get_criterio_out()
         aprovados = []
         for endereco, no in self.ativos.items():
             if no.distancia <= criterio:
@@ -68,5 +69,5 @@ if __name__ == '__main__':
     # aa.remover_no(5)
     aa.atualizar_distancia(1, 10)
     aa.tem_ativo()
-    aprovados = aa.get_aprovados(aa.get_criterio_out())
+    aprovados = aa.get_aprovados()
     print("Iniciando teste")
