@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliar.v
 //  Created On    : 2021-08-12 13:51:49
-//  Last Modified : 2022-04-01 08:23:09
+//  Last Modified : 2022-04-01 08:53:01
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -23,7 +23,7 @@ module avaliador_ativos
 		(/*autoport*/
 			input clk_in,
 			input rst_n_in,
-			// Escrevendo ou atualizando nó a ser analizado
+			// Escrevendo ou atualizando um nó a ser analizado
 			input ativar_in,
 			input [DIST_WIDTH-1:0] ativar_distancia_in,
 			input [DIST_WIDTH-1:0] ativar_menor_vizinho_in,

@@ -45,12 +45,12 @@ class DijkstraParallel():
     def calcular_caminho(self, fonte, destino):
         # Inicializando com a fonte
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
-        self.avaliador_ativos.inserir(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
+        self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
 
 
         # Busca até o avaliador de ativos estar vázio
-        while self.avaliador_ativos.tem_ativo():
-            aprovados_distancia = self.avaliador_ativos.get_aprovados()
+        while self.avaliador_ativos.tem_ativo_no_buffer():
+            aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
 
             buffer = {}
 
@@ -58,7 +58,7 @@ class DijkstraParallel():
                 relacoes_aprovado = self.lvv.get_relacoes(aprovado)
 
                 # Estabelecendo o nó aprovado
-                self.avaliador_ativos.remover_no(aprovado)
+                self.avaliador_ativos.remover_no_buffer(aprovado)
                 self.lvv.remover_do_buffer(aprovado)
                 self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
 
@@ -66,7 +66,7 @@ class DijkstraParallel():
                 for relacao in relacoes_aprovado:
                     endereco_w = relacao[0]
                     custo_vw = relacao[1]
-                    distancia_w = self.avaliador_ativos.get_distancia(endereco_w)
+                    distancia_w = self.avaliador_ativos.get_distancia_no_buffer(endereco_w)
                     atualizou, anterior, distancia_vw, endereco_w = self.aa.atualizar(
                                                                                         endereco_w=endereco_w,
                                                                                         custo_vw=custo_vw,
@@ -91,7 +91,7 @@ class DijkstraParallel():
 
                 if buffer_menor_distancia[endereco_w] > distancia_vw:
                     buffer_menor_distancia[endereco_w] = distancia_vw
-                    self.avaliador_ativos.inserir(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
+                    self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
                     self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
 
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)
@@ -112,7 +112,10 @@ def main(num_nos=10, debug=False, grafico=False):
         graph_gen.plot_path(menor_caminho)
     return menor_caminho, custo
 
+
 if __name__ == '__main__':
+    # teste = False
+    # grafico = True
     teste = True
     grafico = False
     num_nos = 128
@@ -131,5 +134,6 @@ if __name__ == '__main__':
             print(f"Modelo {caminho, custo}")
             break
 
-        else:
-            print(f"Passou {idx}!")
+        # else:
+        #     print(f"Passou {idx}!")
+    print(f"Passou!")
