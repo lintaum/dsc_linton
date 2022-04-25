@@ -47,7 +47,6 @@ class DijkstraParallel():
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
         self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
 
-
         # Busca até o avaliador de ativos estar vázio
         while self.avaliador_ativos.tem_ativo_no_buffer():
             aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
@@ -134,6 +133,6 @@ if __name__ == '__main__':
             print(f"Modelo {caminho, custo}")
             break
 
-        # else:
-        #     print(f"Passou {idx}!")
+        else:
+            print(f"Passou {idx}!")
     print(f"Passou!")
