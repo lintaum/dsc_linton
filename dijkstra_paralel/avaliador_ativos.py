@@ -25,27 +25,26 @@ class Avaliador_ativos():
         self.buffer_ativos = dict.fromkeys(range(self.BUFF_SIZE), NoAtivo(menor_vizinho=0, distancia=0, endereco=0, ativo=False))
 
     def get_buff_addr(self, endereco):
-        # Identifica o endereço no buffer em que o nó está armazenado. No FPGA isso vai ser em paralelo
+        """Identifica o endereço no buffer em que o nó está armazenado. No FPGA isso vai ser em paralelo"""
         for endereco_buffer, no in self.buffer_ativos.items():
             if no.endereco == endereco and no.ativo:
                 return endereco_buffer
         return None
 
     def get_buffer_vazio(self):
-        # Identifica o espaço no buffer que está vazio e apto para receber dados
+        """Identifica o espaço no buffer que está vazio e apto para receber dados"""
         for endereco_buffer, no in self.buffer_ativos.items():
             if not no.ativo:
                 return endereco_buffer
 
     def inserir_no_buffer(self, distancia, menor_vizinho, endereco):
-
+        """Inseri um nó no buffer"""
         endereco_buffer = self.get_buff_addr(endereco)
         if endereco_buffer is None:
             # print(F"Endereço: {int(endereco>>2)}")
             endereco_buffer = self.get_buffer_vazio()
         if endereco_buffer is None:
             print("Estouro do buffer")
-            # break
             return False
         self.buffer_ativos[endereco_buffer] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia, endereco=endereco, ativo=True)
 
@@ -54,12 +53,14 @@ class Avaliador_ativos():
         self.buffer_ativos[endereco_buffer].ativo = False
 
     def get_distancia_no_buffer(self, endereco):
+        """Retorna a distância do nó armazenado no buffer"""
         endereco_buffer = self.get_buff_addr(endereco)
         if endereco_buffer is not None:
             return self.buffer_ativos[endereco_buffer].distancia
         return inf
 
     def tem_ativo_no_buffer(self):
+        """Verifica se existem nós ativos no buffer"""
         for endereco_buffer, no in self.buffer_ativos.items():
             if no.ativo:
                 return True

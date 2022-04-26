@@ -42,6 +42,28 @@ class LocalizadorVizinhosValidos():
                     if self.mem_estabelecidos.ler(relacoes[count][0]) == 0:
                         relacoes_validas.append(relacoes[count])
                 count += 1
+
+            relacoes_vizinho = []
+            for [endereco_w, custo_vw] in relacoes_validas:
+                relacoes_vizinho.append([endereco_w, custo_vw, self.get_menor_vizinho(endereco_w)[1]])
+            return relacoes_vizinho
+        else:
+            self.buscar_memoria(no)
+            return self.get_relacoes(no)
+
+
+    def get_relacoes_e_menor_vizinho(self, no):
+        """Retorna as relações de um nó que não são obstáculos"""
+        if no in self.local_buffer.keys():
+            relacoes, obstaculos = self.local_buffer[no]
+            count = 0
+            relacoes_validas = []
+            for obstaculo in obstaculos:
+                if obstaculo[1] == 0:
+                    if self.mem_estabelecidos.ler(relacoes[count][0]) == 0:
+                        relacoes_validas.append(relacoes[count])
+                count += 1
+
             return relacoes_validas
         else:
             self.buscar_memoria(no)

@@ -21,7 +21,7 @@ class DijkstraParallel():
         self.mem_obstaculos = Memoria(num_nos, max_num_vizinhos)
         self.avaliador_ativos = Avaliador_ativos()
         self.lvv = LocalizadorVizinhosValidos()
-        self.aa = AtualizadorVizinhos()
+        self.av = AtualizadorVizinhos()
         self.fc = FormadorCaminho()
 
     def inicializar_mem(self, grafo):
@@ -49,47 +49,44 @@ class DijkstraParallel():
 
         # Busca até o avaliador de ativos estar vázio
         while self.avaliador_ativos.tem_ativo_no_buffer():
+            buffer0 = []
+            buffer1 = []
+            buffer2 = []
+
             aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
 
-            buffer = {}
-
             for aprovado, distancia_v in aprovados_distancia:
-                relacoes_aprovado = self.lvv.get_relacoes(aprovado)
-
-                # Estabelecendo o nó aprovado
+                """Estabelecendo os nós aprovados"""
                 self.avaliador_ativos.remover_no_buffer(aprovado)
                 self.lvv.remover_do_buffer(aprovado)
                 self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
+                buffer0.append([aprovado, distancia_v])
 
-                # Atualizando os vizinhos do nó aprovado
-                for relacao in relacoes_aprovado:
-                    endereco_w = relacao[0]
-                    custo_vw = relacao[1]
-                    distancia_w = self.avaliador_ativos.get_distancia_no_buffer(endereco_w)
-                    atualizou, anterior, distancia_vw, endereco_w = self.aa.atualizar(
-                                                                                        endereco_w=endereco_w,
-                                                                                        custo_vw=custo_vw,
-                                                                                        endereco_v=aprovado,
-                                                                                        distancia_w=distancia_w,
-                                                                                        distancia_v=distancia_v,
-                                                                                      )
+            for [aprovado, distancia_v] in buffer0:
+                """Encontrando os vizinhos de um nó aprovado"""
+                relacoes_aprovado = self.lvv.get_relacoes_e_menor_vizinho(aprovado)
+                for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
+                    """Transformando em um buffer para aumentar o paralelismo, 
+                    basicamente transformando de 2d para 1d"""
+                    buffer1.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
 
-                    menor_vizinho = self.lvv.get_menor_vizinho(endereco_w)[1]
-                    if atualizou:
-                        buffer[aprovado, endereco_w] = [endereco_w, anterior, distancia_vw, menor_vizinho, distancia_w]
+            for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer1:
+                """Atualizando os vizinhos do nó aprovado"""
+                distancia_w = self.avaliador_ativos.get_distancia_no_buffer(endereco_w)
+                atualizou, anterior, distancia_vw, endereco_w = self.av.atualizar(
+                                                                                    endereco_w=endereco_w,
+                                                                                    custo_vw=custo_vw,
+                                                                                    endereco_v=aprovado,
+                                                                                    distancia_w=distancia_w,
+                                                                                    distancia_v=distancia_v,
+                                                                                  )
+                if atualizou:
+                    buffer2.append([endereco_w, anterior, distancia_vw, menor_vizinho])
 
-            buffer_menor_distancia = {}
-            for [endereco_w, anterior, distancia_vw, menor_vizinho, distancia_w] in buffer.values():
-                # a nova distância deve ser comparada com a distância global, pois outro nó pode ter atualizado com uma
-                # distância menor do que a atual
-                if endereco_w in buffer_menor_distancia.keys():
-                    if buffer_menor_distancia[endereco_w] > distancia_w:
-                        buffer_menor_distancia[endereco_w] = distancia_w
-                else:
-                    buffer_menor_distancia[endereco_w] = distancia_w
-
-                if buffer_menor_distancia[endereco_w] > distancia_vw:
-                    buffer_menor_distancia[endereco_w] = distancia_vw
+            for [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer2:
+                """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado com 
+                uma distância menor do que a atual"""
+                if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
                     self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
                     self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
 
