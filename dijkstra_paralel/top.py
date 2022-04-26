@@ -7,6 +7,7 @@ from dijkstra_otimizado.dijkstra_out_sequencial import main as main_sequencial
 from dijkstra.dijkstra_crauser import main as main_crauser
 from crauser.random_graph import GraphGen
 import warnings
+inf = float('inf')
 
 class DijkstraParallel():
     def __init__(self, num_nos, max_num_vizinhos):
@@ -71,23 +72,18 @@ class DijkstraParallel():
                     buffer1.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
 
             for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer1:
-                """Atualizando os vizinhos do nó aprovado"""
-                distancia_w = self.avaliador_ativos.get_distancia_no_buffer(endereco_w)
-                atualizou, anterior, distancia_vw, endereco_w = self.av.atualizar(
-                                                                                    endereco_w=endereco_w,
-                                                                                    custo_vw=custo_vw,
-                                                                                    endereco_v=aprovado,
-                                                                                    distancia_w=distancia_w,
-                                                                                    distancia_v=distancia_v,
-                                                                                  )
-                if atualizou:
-                    buffer2.append([endereco_w, anterior, distancia_vw, menor_vizinho])
+                """Atualizando os vizinhos do nó aprovado, o atualizador de vizinhos foi removido devido a necessidade de acessar a memṕria 
+                para consultar a distancia de w, desse modo a distancia só é consultada na etapa final do pipeline"""
+                distancia_vw = distancia_v + custo_vw
+                buffer2.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
 
             for [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer2:
                 """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado com 
                 uma distância menor do que a atual"""
                 if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
-                    self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw, endereco=endereco_w, menor_vizinho=menor_vizinho)
+                    self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
+                                                            endereco=endereco_w,
+                                                            menor_vizinho=menor_vizinho)
                     self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
 
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)

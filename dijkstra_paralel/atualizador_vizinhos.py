@@ -1,4 +1,4 @@
-
+inf = float('inf')
 
 class AtualizadorVizinhos():
     """
