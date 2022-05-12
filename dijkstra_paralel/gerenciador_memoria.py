@@ -19,7 +19,9 @@ class MemoriaInt():
         self.mem = {}
 
     def ler(self, endereco):
-        return self.mem[endereco]
+        if endereco in self.mem.keys():
+            return self.mem[endereco]
+        return None
 
     def escrever(self, endereco, valor):
         self.mem[endereco] = valor

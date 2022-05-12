@@ -11,6 +11,7 @@ class GraphGen:
         self.nodes = None
 
 
+
     def adjacent_lis(self, nodes):
         L = int(sqrt(nodes))
         perfect_sqrt = (nodes % L) == 0
@@ -139,6 +140,65 @@ class GraphGen:
         nx.draw_networkx_edges(G,pos,edgelist=path_edges, edge_color='r')
 
         plt.show()
+
+    def plot_path_obstaculo(self, path, obstaculos):
+        # Build your graph
+        G = nx.DiGraph()
+        L = int(sqrt(self.nodes))
+        perfect_sqrt = (self.nodes % L) == 0
+
+        add_one = (self.nodes % 2 is not 0) and (not perfect_sqrt)
+
+        for node in range(self.nodes):
+            posx = node % L
+            posy = L-1-int(node / L)
+            G.add_node(node, pos=(posx, posy))
+
+        for v in G.nodes:
+            G.nodes[v]['state']= v
+        print('\n')
+        for nos, custo in self.graph.get_relacoes().items():
+            G.add_edge(nos[0], nos[1], weight=custo)
+
+        pos=nx.get_node_attributes(G, 'pos')
+        nx.draw(G, pos)
+        node_labels = nx.get_node_attributes(G,'state')
+        nx.draw_networkx_labels(G, pos, labels = node_labels)
+        edge_labels = nx.get_edge_attributes(G, 'weight')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, with_labels=True)
+
+        # adicionando caminho
+        path_edges = list(zip(list(path),list(path)[1:]))
+        nx.draw_networkx_nodes(G, pos, nodelist=set(path), node_color='r')
+        nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='r')
+
+        # list_obstaculos = []
+        # list_obstaculos_nodes = []
+        #
+        # for endereco, posicao in obstaculos.mem.items():
+        #     for vizinho in posicao:
+        #         if vizinho[1]:
+        #             list_obstaculos.append((endereco, vizinho[0]))
+        #             list_obstaculos_nodes.append(vizinho[0])
+        # list_obstaculos_nodes = set(list_obstaculos_nodes)
+
+        list_obstaculos, list_obstaculos_nodes = obstaculos
+        nx.draw_networkx_edges(G, pos, edgelist=set(list_obstaculos), edge_color='w')
+        nx.draw_networkx_nodes(G, pos, nodelist=set(list_obstaculos_nodes), node_color='w')
+
+
+        plt.show()
+
+    def criar_obstaculos(self, num, fonte, destino):
+        count = 0
+        list_obstaculos = []
+        random.seed(num)
+        while count < num:
+            node = random.randint(1, len(self.graph.nos)-1)
+            if node != fonte and node != destino and count < num:
+                list_obstaculos.append(node)
+                count += 1
+        return list_obstaculos
 
 
 if __name__ == '__main__':

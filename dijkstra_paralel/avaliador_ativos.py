@@ -1,6 +1,7 @@
 inf = float('inf')
 
-class NoAtivo():
+
+class NoAtivo:
     """Estrutura básica de um nó ativo"""
     def __init__(self, menor_vizinho, distancia, endereco, ativo=True):
         self.menor_vizinho = menor_vizinho
@@ -17,11 +18,12 @@ class NoAtivo():
         self.criterio = nova_distancia + self.menor_vizinho
 
 
-class Avaliador_ativos():
+class AvaliadorAtivos:
     """Insere e remove os nós ativos, calcula o critério de classificação e seleciona os aprovados"""
-    BUFF_SIZE = 64
+    BUFF_SIZE = 500
 
     def __init__(self):
+        self.max_ocupacao = 0
         self.buffer_ativos = dict.fromkeys(range(self.BUFF_SIZE), NoAtivo(menor_vizinho=0, distancia=0, endereco=0, ativo=False))
 
     def get_buff_addr(self, endereco):
@@ -30,6 +32,16 @@ class Avaliador_ativos():
             if no.endereco == endereco and no.ativo:
                 return endereco_buffer
         return None
+
+    def get_ocupacao_buffer(self):
+        count = 0
+        for endereco_buffer, no in self.buffer_ativos.items():
+            if no.ativo:
+                count += 1
+        if count > self.max_ocupacao:
+            self.max_ocupacao = count
+        return self.max_ocupacao
+
 
     def get_buffer_vazio(self):
         """Identifica o espaço no buffer que está vazio e apto para receber dados"""
@@ -41,7 +53,6 @@ class Avaliador_ativos():
         """Inseri um nó no buffer"""
         endereco_buffer = self.get_buff_addr(endereco)
         if endereco_buffer is None:
-            # print(F"Endereço: {int(endereco>>2)}")
             endereco_buffer = self.get_buffer_vazio()
         if endereco_buffer is None:
             print("Estouro do buffer")
@@ -49,6 +60,7 @@ class Avaliador_ativos():
         self.buffer_ativos[endereco_buffer] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia, endereco=endereco, ativo=True)
 
     def remover_no_buffer(self, endereco):
+        self.get_ocupacao_buffer()
         endereco_buffer = self.get_buff_addr(endereco)
         self.buffer_ativos[endereco_buffer].ativo = False
 
@@ -89,7 +101,7 @@ class Avaliador_ativos():
 
 
 if __name__ == '__main__':
-    aa = Avaliador_ativos()
+    aa = AvaliadorAtivos()
     aa.inserir_no_buffer(distancia=7, menor_vizinho=0, endereco=1)
     aa.inserir_no_buffer(distancia=4, menor_vizinho=1, endereco=2)
     aa.inserir_no_buffer(distancia=2, menor_vizinho=3, endereco=3)

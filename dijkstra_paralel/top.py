@@ -1,5 +1,5 @@
 from dijkstra_paralel.atualizador_vizinhos import AtualizadorVizinhos
-from dijkstra_paralel.avaliador_ativos import Avaliador_ativos
+from dijkstra_paralel.avaliador_ativos import AvaliadorAtivos
 from dijkstra_paralel.formador_caminhos import FormadorCaminho
 from dijkstra_paralel.gerenciador_memoria import Memoria, MemoriaInt
 from dijkstra_paralel.localizador_vizinhos_validos import LocalizadorVizinhosValidos
@@ -20,12 +20,13 @@ class DijkstraParallel():
         self.mem_estabelecidos = MemoriaInt(num_nos, 1)
         self.mem_relacoes = Memoria(num_nos, max_num_vizinhos)
         self.mem_obstaculos = Memoria(num_nos, max_num_vizinhos)
-        self.avaliador_ativos = Avaliador_ativos()
+        self.avaliador_ativos = AvaliadorAtivos()
         self.lvv = LocalizadorVizinhosValidos()
         self.av = AtualizadorVizinhos()
         self.fc = FormadorCaminho()
 
-    def inicializar_mem(self, grafo):
+    def inicializar_mem(self, grafo, obstaculos):
+        print(f"Obstaculos: {obstaculos}")
         for no in grafo.nos:
             relacoes = grafo.get_relacoes_vizinhos(no)
             relacoes = dict(sorted(relacoes.items(), key=lambda item: item[1]))
@@ -33,7 +34,13 @@ class DijkstraParallel():
             obstaculo_list = []
             for relacao, custo in relacoes.items():
                 relacoes_list.append((relacao[1], custo))
-                obstaculo_list.append((relacao[1], 0))
+
+            for relacao, custo in relacoes.items():
+                if relacao[1] in obstaculos:
+                    obstaculo_list.append((relacao[1], 1))
+                else:
+                    obstaculo_list.append((relacao[1], 0))
+
             """Inicializando memória de relações"""
             self.mem_relacoes.escrever(no, relacoes_list)
             """Inicializando memória de obstáculos"""
@@ -43,83 +50,131 @@ class DijkstraParallel():
             """Repassando as memórias para o LVV"""
             self.lvv.inicializar_mem(self.mem_relacoes, self.mem_obstaculos, self.mem_estabelecidos)
 
+    def estabelecer(self):
+        buffer0 = []
+        aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
+        for aprovado, distancia_v in aprovados_distancia:
+            """Estabelecendo os nós aprovados, verificar se essa etapa pode ser realizada junto da próxima"""
+            self.avaliador_ativos.remover_no_buffer(aprovado)
+            self.lvv.remover_do_buffer(aprovado)
+            self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
+            buffer0.append([aprovado, distancia_v])
+        return buffer0
+
+    def encontrar_vizinhos(self, buffer0):
+        buffer1 = []
+        for [aprovado, distancia_v] in buffer0:
+            """Encontrando os vizinhos de um nó aprovado"""
+            relacoes_aprovado = self.lvv.get_relacoes_e_menor_vizinho(aprovado)
+            for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
+                """Transformando em um buffer para aumentar o paralelismo, 
+                basicamente transformando de 2d para 1d"""
+                buffer1.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
+        return buffer1
+
+    def calcular_distancia(self, buffer1):
+        buffer2 = []
+        for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer1:
+                """Atualizando os vizinhos do nó aprovado, 
+                O atualizador de vizinhos foi removido devido a necessidade de acessar a memória para consultar a 
+                distancia de w, desse modo a distancia só é consultada na etapa final do pipeline, isso aumenta o gasto 
+                computacional pois sempre irá analisar todos os nós, no entanto, também reduz e centraliza o acesso de 
+                leitura aos buffer do avaliador de ativos."""
+                distancia_vw = distancia_v + custo_vw
+
+                buffer2.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
+        return buffer2
+
+    def atualizar(self, buffer2):
+        for [endereco_w, aprovado, distancia_vw, menor_vizinho] in buffer2:
+            """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado com 
+            uma distância menor do que a atual"""
+            if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
+                self.avaliador_ativos.inserir_no_buffer(
+                                                            distancia=distancia_vw,
+                                                            endereco=endereco_w,
+                                                            menor_vizinho=menor_vizinho
+                                                        )
+                self.mem_anterior.escrever(endereco=endereco_w, valor=aprovado)
+
     def calcular_caminho(self, fonte, destino):
         # Inicializando com a fonte
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
-        self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
+        if menor_vizinho:
+            self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
 
         # Busca até o avaliador de ativos estar vázio
+        max_aprovados = 0
         while self.avaliador_ativos.tem_ativo_no_buffer():
-            buffer0 = []
-            buffer1 = []
-            buffer2 = []
+            buffer00 = self.estabelecer()
+            buffer10 = self.encontrar_vizinhos(buffer00)
+            buffer20 = self.calcular_distancia(buffer10)
+            self.atualizar(buffer20)
 
-            aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
-
-            for aprovado, distancia_v in aprovados_distancia:
-                """Estabelecendo os nós aprovados"""
-                self.avaliador_ativos.remover_no_buffer(aprovado)
-                self.lvv.remover_do_buffer(aprovado)
-                self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
-                buffer0.append([aprovado, distancia_v])
-
-            for [aprovado, distancia_v] in buffer0:
-                """Encontrando os vizinhos de um nó aprovado"""
-                relacoes_aprovado = self.lvv.get_relacoes_e_menor_vizinho(aprovado)
-                for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
-                    """Transformando em um buffer para aumentar o paralelismo, 
-                    basicamente transformando de 2d para 1d"""
-                    buffer1.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
-
-            for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer1:
-                """Atualizando os vizinhos do nó aprovado, o atualizador de vizinhos foi removido devido a necessidade de acessar a memṕria 
-                para consultar a distancia de w, desse modo a distancia só é consultada na etapa final do pipeline"""
-                distancia_vw = distancia_v + custo_vw
-                buffer2.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
-
-            for [endereco_w, anterior, distancia_vw, menor_vizinho] in buffer2:
-                """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado com 
-                uma distância menor do que a atual"""
-                if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
-                    self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
-                                                            endereco=endereco_w,
-                                                            menor_vizinho=menor_vizinho)
-                    self.mem_anterior.escrever(endereco=endereco_w, valor=anterior)
-
+            if len(buffer00) > max_aprovados:
+                max_aprovados = len(buffer00)
+        print(f"Max Aprovados: {max_aprovados}, Max Ativos: {self.avaliador_ativos.max_ocupacao}")
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)
 
 
-def main(num_nos=10, debug=False, grafico=False):
+def main(num_nos=10, debug=False, grafico=False, num_onstaculos=10):
     # num_nos = 5
-    fonte = 3
+    fonte = 0
     destino = num_nos-1
 
     top = DijkstraParallel(num_nos=num_nos, max_num_vizinhos=6)
     graph_gen = GraphGen(max_weigth=10)
     graph_gen.adjacent_lis(nodes=num_nos)
-    top.inicializar_mem(graph_gen.graph)
+
+    obstaculos = graph_gen.criar_obstaculos(fonte=fonte, destino=destino, num=num_onstaculos)
+    # graph_gen.plot()
+
+    top.inicializar_mem(graph_gen.graph, obstaculos=obstaculos)
     menor_caminho = top.calcular_caminho(fonte=fonte, destino=destino)
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if grafico:
-        graph_gen.plot_path(menor_caminho)
+        graph_gen.plot_path_obstaculo(menor_caminho, (lista_obstaculos_plot(top.mem_obstaculos)))
     return menor_caminho, custo
 
 
+def lista_obstaculos_plot(obstaculos):
+    list_obstaculos = []
+    list_obstaculos_nodes = []
+
+    for endereco, posicao in obstaculos.mem.items():
+        for vizinho in posicao:
+            if vizinho[1]:
+                list_obstaculos.append((endereco, vizinho[0]))
+                list_obstaculos_nodes.append(vizinho[0])
+    list_obstaculos_nodes = set(list_obstaculos_nodes)
+    return list_obstaculos, list_obstaculos_nodes
+
 if __name__ == '__main__':
     # teste = False
-    # grafico = True
+    grafico = True
     teste = True
-    grafico = False
+    # grafico = False
     num_nos = 128
-    inicio = 5
+    inicio = 36
+    tem_obstaculo = True
+    # tem_obstaculo = False
+
 
     if not teste:
         inicio = num_nos - 1
 
     for idx in range(inicio, num_nos):
-        caminho, custo = main(num_nos=idx, debug=False, grafico=grafico)
-        caminho2, custo2 = main_sequencial(num_nos=idx, debug=False, grafico=grafico)
+        num_onstaculos = 0
+        if tem_obstaculo:
+            num_onstaculos = idx/4
+        caminho, custo = main(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
+        caminho2, custo2 = main_sequencial(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
 
+        # print(f"Num de nós {idx}")
+        # print(f"Referência {caminho2, custo2}")
+        # print(f"Modelo {caminho, custo}")
+
+        # if custo != custo2 or caminho2 != caminho:
         if custo != custo2:
             warnings.warn(f"Foram encontrados erros: num de nós {idx}")
             print(f"Referência {caminho2, custo2}")
@@ -128,4 +183,4 @@ if __name__ == '__main__':
 
         else:
             print(f"Passou {idx}!")
-    print(f"Passou!")
+    # print(f"Passou Tudo!")

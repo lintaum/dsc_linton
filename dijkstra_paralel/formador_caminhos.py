@@ -6,8 +6,11 @@ class FormadorCaminho():
         no = destino
         while no is not fonte:
             anterior = mem_anterior.ler(no)
-            menor_caminho.append(anterior)
-            no = anterior
+            if anterior is not None:
+                menor_caminho.append(anterior)
+                no = anterior
+            else:
+                break
             # print(f"Construindo menor Caminho: {menor_caminho}")
         # Invertendo a ordem da lista
         menor_caminho = menor_caminho[::-1]

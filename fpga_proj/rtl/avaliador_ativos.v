@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador de ativos.v
 //  Created On    : 2021-08-12 13:51:49
-//  Last Modified : 2022-04-01 14:16:38
+//  Last Modified : 2022-04-29 08:13:18
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -45,17 +45,19 @@ module avaliador_ativos
 //Internal
 //*******************************************************
 //Local Parameters
+// distancia + menor_vizinho + endereco + ativo
+localparam BUFFER_WIDTH = DIST_WIDTH + DIST_WIDTH + NODE_WIDTH + 1;
 //Wires
 wire [DIST_WIDTH-1:0] criterio_out, treshold
 wire [BUFFER_SIZE-1:0] endereco_escrita;
 wire [BUFFER_SIZE-1:0] endereco_leitura;
 wire [BUFFER_SIZE-1:0] endereco_remocao;
+wire [DIST_WIDTH-1:0] distancia [0:BUFFER_SIZE-1];
+wire [DIST_WIDTH-1:0] menor_vizinho [0:BUFFER_SIZE-1];
+wire [NODE_WIDTH-1:0] endereco [0:BUFFER_SIZE-1];
+wire ativo [0:BUFFER_SIZE-1];
 //Registers
-reg [DIST_WIDTH-1:0] distancia [0:BUFFER_SIZE-1];
-reg [DIST_WIDTH-1:0] menor_vizinho [0:BUFFER_SIZE-1];
-reg [NODE_WIDTH-1:0] endereco [0:BUFFER_SIZE-1];
-reg ativo [0:BUFFER_SIZE-1];
-
+reg [BUFFER_WIDTH-1:0] buffer [0:BUFFER_SIZE-1]
 //*******************************************************
 //Inserindo um novo nó ativo
 //*******************************************************
@@ -88,6 +90,7 @@ generate
 	genvar i;
 	for (i = 0; i < BUFFER_SIZE; i = i + 1) begin:sum_criterio_out
 		assign endereco_escrita[i] = endereco[i] == ativar_endereco_no_in
+		assign endereco_disponivel[i] = ativo[i] == 1'b1
 	end
 endgenerate
 

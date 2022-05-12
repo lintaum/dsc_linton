@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : fifo.v
 //  Created On    : 2013-12-18 09:43:05
-//  Last Modified : 2021-08-12 13:50:25
+//  Last Modified : 2022-04-29 08:10:46
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -27,11 +27,7 @@ module fifo
         input write_enable,
         input read_enable,
         //outputs
-<<<<<<< HEAD
         output [DATA_WIDTH-1:0] read_data
-=======
-        output reg [DATA_WIDTH-1:0] read_data
->>>>>>> aea9752 (Versão funcionando)
         
        );
 

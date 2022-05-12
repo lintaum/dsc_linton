@@ -45,7 +45,7 @@ def remover_no_aprovado(grafo, aprovado, distancia, anterior, result):
     anterior_vizinhos = {}
     custo_vizinho = {}
     vizinhos_validados = []
-
+    no = None
     for no, vizinho in vizinhos:
         """Se o vizinho já foi estabelecido, já achou o menor caminho então não faz nada"""
         if vizinho not in distancia.keys():
@@ -56,8 +56,14 @@ def remover_no_aprovado(grafo, aprovado, distancia, anterior, result):
         custo_vizinho[vizinho] = grafo.get_custo(no, vizinho)
         vizinhos_validados.append(vizinho)
 
-    distancia_vizinhos[no] = distancia[no]
-    remover_no(no, vizinhos_validados, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
+        distancia_vizinhos[no] = distancia[no]
+        remover_no(no, vizinhos_validados, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
+    # try:
+    #     if no:
+    #         distancia_vizinhos[no] = distancia[no]
+    #         remover_no(no, vizinhos_validados, distancia_vizinhos, anterior_vizinhos, custo_vizinho, result)
+    # except:
+    #     print("Error")
 
 
 class DijkstraCrauser:
@@ -66,7 +72,7 @@ class DijkstraCrauser:
         Dessa forma, para cada nó basta saber qual o nó anterior na direção da fonte para se descobrir,
         o menor caminho.
     """
-    def __init__(self, fonte, destino, grafo):
+    def __init__(self, fonte, destino, grafo, obstaculos):
         self.total_aprovados_out = []
         self.total_empilhados = []
 
@@ -76,18 +82,20 @@ class DijkstraCrauser:
         self.menor_dist = {}
         self.criterio_out = {}
         self.estabelecidos = {i:0 for i in range(0, len(self.grafo.nos))}
+        self.obstaculos = {}
         self.empilhados = []
         self.distancia = {}
         self.anterior = {i:0 for i in range(0, len(self.grafo.nos))}
-        self.inicializar()
+        self.inicializar(obstaculos)
 
-    def inicializar(self):
+    def inicializar(self, obstaculos):
         self.anterior[self.fonte] = 0
         self.empilhados.append(self.fonte)
         self.distancia[self.fonte] = 0
         for no in range(len(self.grafo.nos)):
             self.estabelecidos[no] = 0
             self.menor_dist[no] = 100
+
 
 
     def get_menor_caminho(self):
@@ -144,45 +152,49 @@ class DijkstraCrauser:
 
             result = {}
             for aprovado in aprovados:
-                remover_no_aprovado(self.grafo, aprovado, self.distancia, self.anterior, result)
+                vizinhos = self.grafo.get_relacoes_vizinhos(aprovado)
+                if vizinhos:
+                    remover_no_aprovado(self.grafo, aprovado, self.distancia, self.anterior, result)
 
             """Estabelecendo o nó já visitado, removendo dos empilhados e recuperando dados dos buffers"""
             for aprovado in aprovados:
                 self.empilhados.remove(aprovado)
                 self.estabelecidos[aprovado] = 1
                 self.distancia.pop(aprovado)
-
-                for vizinho, atualizou, anterior, distancia in result[aprovado]:
-                    if atualizou:
-                        if self.estabelecidos[vizinho] == 0:
-                            if vizinho not in self.distancia.keys():
-                                self.distancia[vizinho] = distancia
-                                self.anterior[vizinho] = anterior
-                            elif distancia < self.distancia[vizinho]:
-                                self.distancia[vizinho] = distancia
-                                self.anterior[vizinho] = anterior
-                            if vizinho not in self.empilhados:
-                                self.empilhados.append(vizinho)
+                vizinhos = self.grafo.get_relacoes_vizinhos(aprovado)
+                if vizinhos:
+                    for vizinho, atualizou, anterior, distancia in result[aprovado]:
+                        if atualizou:
+                            if self.estabelecidos[vizinho] == 0:
+                                if vizinho not in self.distancia.keys():
+                                    self.distancia[vizinho] = distancia
+                                    self.anterior[vizinho] = anterior
+                                elif distancia < self.distancia[vizinho]:
+                                    self.distancia[vizinho] = distancia
+                                    self.anterior[vizinho] = anterior
+                                if vizinho not in self.empilhados:
+                                    self.empilhados.append(vizinho)
         if debug:
             print(f"\nTotal de iterações: {count}")
             criar_analise(self)
         return self.get_menor_caminho()
 
 
-def main(num_nos=120, debug=False, grafico=False):
+def main(num_nos=120, debug=False, grafico=False, num_onstaculos=0):
     tempo_objetivo = 425 * 0.001
     # Gerando o grafo e plotando
 
     # do stuff
-    no_inicio = 3
+    no_inicio = 0
     no_destino = num_nos-1
     graph_gen = GraphGen(max_weigth=10)
     graph_gen.adjacent_lis(nodes=num_nos)
     # graph_gen.plot()
-
+    obstaculos = graph_gen.criar_obstaculos(fonte=no_inicio, destino=no_destino, num=num_onstaculos)
+    graph_gen.graph.init_obstaculos(obstaculos)
    # Calculando o menor caminho Sequencial
     start = time.time()
-    menor_caminho_s = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph).dijkstra(debug=debug)
+    menor_caminho_s = DijkstraCrauser(no_inicio, no_destino, graph_gen.graph, obstaculos).dijkstra(debug=debug)
     end = time.time()
     tempo = end - start
     custo_s = graph_gen.graph.get_custo_caminho(menor_caminho_s)
@@ -195,10 +207,19 @@ def main(num_nos=120, debug=False, grafico=False):
     if debug:
         print(f"Custo do caminho: {custo}")
     if grafico:
-        graph_gen.plot_path(menor_caminho)
+        graph_gen.plot_path_obstaculo(menor_caminho, (lista_obstaculos_plot(obstaculos, graph_gen.graph)))
 
     return menor_caminho, custo
 
+
+def lista_obstaculos_plot(obstaculos, grafo):
+    list_obstaculos_nodes = []
+
+    for relacao, custo in grafo.relacoes.items():
+        if relacao[1] in grafo.obstaculos:
+            list_obstaculos_nodes.append(relacao)
+
+    return list_obstaculos_nodes, obstaculos
 
 if __name__ == '__main__':
     def print_erro():

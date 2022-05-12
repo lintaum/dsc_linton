@@ -3,13 +3,17 @@ class Grafo():
         definições do grafo:
             - Não existe mais de um caminho entre dois nós
     """
-    def __init__(self):
+    def __init__(self, obstaculos=[]):
         self.relacoes = {}
         self.nos = []
+        self.obstaculos = obstaculos
 
     def add_relacao(self, no_1, no_2, peso):
         self.relacoes[(no_1, no_2)]=peso
         # self.relacoes.append(Relacao(no_1, no_2, peso))
+
+    def init_obstaculos(self, obstaculos):
+        self.obstaculos = obstaculos
 
     def add_no(self, no):
         self.nos.append(no)
@@ -23,7 +27,8 @@ class Grafo():
         relacoes = {}
         for relacao, custo in self.relacoes.items():
             if no in relacao:
-                relacoes[relacao]=custo
+                if relacao[1] not in self.obstaculos:
+                    relacoes[relacao]=custo
         return relacoes
 
     def get_custo(self, no_1, no_2):
@@ -95,6 +100,8 @@ class Grafo():
 
     def get_custo_caminho(self, caminho):
         custo = 0
+        if len(caminho) == 2:
+            return 0
         for idx in range(len(caminho)):
             if idx < len(caminho)-1:
                 custo = custo + self.get_custo(caminho[idx], caminho[idx+1])
