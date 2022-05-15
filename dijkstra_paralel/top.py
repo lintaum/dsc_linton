@@ -26,14 +26,18 @@ class DijkstraParallel():
         self.fc = FormadorCaminho()
 
     def inicializar_mem(self, grafo, obstaculos):
-        print(f"Obstaculos: {obstaculos}")
+        # print(f"Obstaculos: {obstaculos}")
         for no in grafo.nos:
             relacoes = grafo.get_relacoes_vizinhos(no)
             relacoes = dict(sorted(relacoes.items(), key=lambda item: item[1]))
-            relacoes_list = []
             obstaculo_list = []
+            relacao_list = []
+
             for relacao, custo in relacoes.items():
-                relacoes_list.append((relacao[1], custo))
+                if relacao[1] in obstaculos:
+                    relacao_list.append((relacao[1], 1, custo))
+                else:
+                    relacao_list.append((relacao[1], 0, custo))
 
             for relacao, custo in relacoes.items():
                 if relacao[1] in obstaculos:
@@ -42,13 +46,12 @@ class DijkstraParallel():
                     obstaculo_list.append((relacao[1], 0))
 
             """Inicializando memória de relações"""
-            self.mem_relacoes.escrever(no, relacoes_list)
-            """Inicializando memória de obstáculos"""
+            self.mem_relacoes.escrever(no, relacao_list)
             self.mem_obstaculos.escrever(no, obstaculo_list)
             """Inicializando memória de estabelecidos"""
             self.mem_estabelecidos.escrever(no, 0)
             """Repassando as memórias para o LVV"""
-            self.lvv.inicializar_mem(self.mem_relacoes, self.mem_obstaculos, self.mem_estabelecidos)
+            self.lvv.inicializar_mem(self.mem_relacoes, self.mem_estabelecidos)
 
     def estabelecer(self):
         buffer0 = []
@@ -56,7 +59,6 @@ class DijkstraParallel():
         for aprovado, distancia_v in aprovados_distancia:
             """Estabelecendo os nós aprovados, verificar se essa etapa pode ser realizada junto da próxima"""
             self.avaliador_ativos.remover_no_buffer(aprovado)
-            self.lvv.remover_do_buffer(aprovado)
             self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
             buffer0.append([aprovado, distancia_v])
         return buffer0
@@ -65,11 +67,12 @@ class DijkstraParallel():
         buffer1 = []
         for [aprovado, distancia_v] in buffer0:
             """Encontrando os vizinhos de um nó aprovado"""
-            relacoes_aprovado = self.lvv.get_relacoes_e_menor_vizinho(aprovado)
+            relacoes_aprovado = self.lvv.get_relacoes(aprovado)
             for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
                 """Transformando em um buffer para aumentar o paralelismo, 
                 basicamente transformando de 2d para 1d"""
                 buffer1.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
+            self.lvv.remover_do_buffer(aprovado)
         return buffer1
 
     def calcular_distancia(self, buffer1):
@@ -105,6 +108,7 @@ class DijkstraParallel():
 
         # Busca até o avaliador de ativos estar vázio
         max_aprovados = 0
+        max_buffer_lvv = 0
         while self.avaliador_ativos.tem_ativo_no_buffer():
             buffer00 = self.estabelecer()
             buffer10 = self.encontrar_vizinhos(buffer00)
@@ -113,7 +117,26 @@ class DijkstraParallel():
 
             if len(buffer00) > max_aprovados:
                 max_aprovados = len(buffer00)
-        print(f"Max Aprovados: {max_aprovados}, Max Ativos: {self.avaliador_ativos.max_ocupacao}")
+            if self.lvv.get_len_buffer() > max_buffer_lvv:
+                max_buffer_lvv = self.lvv.get_len_buffer()
+        """
+        O hit e miss é influenciado pela quantidade de obstáculos, quanto mais obstáculos mais nós não são alcançados 
+        e conseguentemente menos nós são analisados, grafos sem obstáculos a quantidade de miss é igual a quantidade 
+        de nós.
+        0 obstáculos 7.6x mais hit
+        1/5 de obstáculos temos 6x mais hit
+        1/4 de obstáculos temos 6x mais hit
+        1/3 de obstáculos temos 5x mais hit
+        1/2 de obstáculos temos 5x mais hit
+        
+        """
+        print(f"Max Aprovados: {max_aprovados}, "
+              f"Max Ativos: {self.avaliador_ativos.max_ocupacao}, "
+              f"Max Buffer LVV: {max_buffer_lvv}; "
+              f"Hit {self.lvv.hit}, "
+              f"Miss {self.lvv.miss} "
+              f"Hit/Miss {round(self.lvv.hit/self.lvv.miss, 2)}")
+
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)
 
 
@@ -150,12 +173,12 @@ def lista_obstaculos_plot(obstaculos):
     return list_obstaculos, list_obstaculos_nodes
 
 if __name__ == '__main__':
-    # teste = False
+    teste = False
     grafico = True
-    teste = True
+    # teste = True
     # grafico = False
-    num_nos = 128
-    inicio = 36
+    num_nos = 157
+    inicio = 100
     tem_obstaculo = True
     # tem_obstaculo = False
 
@@ -166,7 +189,7 @@ if __name__ == '__main__':
     for idx in range(inicio, num_nos):
         num_onstaculos = 0
         if tem_obstaculo:
-            num_onstaculos = idx/4
+            num_onstaculos = idx/3
         caminho, custo = main(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
         caminho2, custo2 = main_sequencial(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
 
