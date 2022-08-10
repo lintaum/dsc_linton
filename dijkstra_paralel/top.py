@@ -53,53 +53,6 @@ class DijkstraParallel():
             """Repassando as memórias para o LVV"""
             self.lvv.inicializar_mem(self.mem_relacoes, self.mem_estabelecidos)
 
-    def estabelecer(self):
-        buffer0 = []
-        aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
-        for aprovado, distancia_v in aprovados_distancia:
-            """Estabelecendo os nós aprovados, verificar se essa etapa pode ser realizada junto da próxima"""
-            self.avaliador_ativos.remover_no_buffer(aprovado)
-            self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
-            buffer0.append([aprovado, distancia_v])
-        return buffer0
-
-    def encontrar_vizinhos(self, buffer0):
-        buffer1 = []
-        for [aprovado, distancia_v] in buffer0:
-            """Encontrando os vizinhos de um nó aprovado"""
-            relacoes_aprovado = self.lvv.get_relacoes(aprovado)
-            for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
-                """Transformando em um buffer para aumentar o paralelismo, 
-                basicamente transformando de 2d para 1d"""
-                buffer1.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
-            self.lvv.remover_do_buffer(aprovado)
-        return buffer1
-
-    def calcular_distancia(self, buffer1):
-        buffer2 = []
-        for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer1:
-                """Atualizando os vizinhos do nó aprovado, 
-                O atualizador de vizinhos foi removido devido a necessidade de acessar a memória para consultar a 
-                distancia de w, desse modo a distancia só é consultada na etapa final do pipeline, isso aumenta o gasto 
-                computacional pois sempre irá analisar todos os nós, no entanto, também reduz e centraliza o acesso de 
-                leitura aos buffer do avaliador de ativos."""
-                distancia_vw = distancia_v + custo_vw
-
-                buffer2.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
-        return buffer2
-
-    def atualizar(self, buffer2):
-        for [endereco_w, aprovado, distancia_vw, menor_vizinho] in buffer2:
-            """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado com 
-            uma distância menor do que a atual"""
-            if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
-                self.avaliador_ativos.inserir_no_buffer(
-                                                            distancia=distancia_vw,
-                                                            endereco=endereco_w,
-                                                            menor_vizinho=menor_vizinho
-                                                        )
-                self.mem_anterior.escrever(endereco=endereco_w, valor=aprovado)
-
     def calcular_caminho(self, fonte, destino):
         # Inicializando com a fonte
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
@@ -110,18 +63,56 @@ class DijkstraParallel():
         max_aprovados = 0
         max_buffer_lvv = 0
         while self.avaliador_ativos.tem_ativo_no_buffer():
-            buffer00 = self.estabelecer()
-            buffer10 = self.encontrar_vizinhos(buffer00)
-            buffer20 = self.calcular_distancia(buffer10)
-            self.atualizar(buffer20)
+            """Passo 1 - Estabelecendo"""
+            buffer00 = []
+            aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
+            for aprovado, distancia_v in aprovados_distancia:
+                """Estabelecendo os nós aprovados"""
+                self.avaliador_ativos.remover_no_buffer(aprovado)
+                self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
+                buffer00.append([aprovado, distancia_v])
 
+            """Passo 2 - Encontrando vizinhos"""
+            buffer10 = []
+            for [aprovado, distancia_v] in buffer00:
+                """Encontrando os vizinhos de um nó aprovado"""
+                relacoes_aprovado = self.lvv.get_relacoes(aprovado)
+                for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
+                    """Transformando em um buffer para aumentar o paralelismo, 
+                    basicamente transformando de 2d para 1d"""
+                    buffer10.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
+                """Removendo o nó aprovado do buffer em LVV"""
+                self.lvv.remover_do_buffer(aprovado)
+
+            """Passo 3 - Calculando a distância"""
+            buffer20 = []
+            for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer10:
+                    """Atualizando os vizinhos do nó aprovado, 
+                    O atualizador de vizinhos foi removido devido a necessidade de acessar a memória para consultar a 
+                    distancia de w, desse modo a distancia só é consultada na etapa final do pipeline, isso aumenta o gasto 
+                    computacional pois sempre irá analisar todos os nós, no entanto, também reduz e centraliza o acesso de 
+                    leitura aos buffer do avaliador de ativos."""
+                    distancia_vw = distancia_v + custo_vw
+                    buffer20.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
+
+            """Passo 4 - Atualizando"""
+            for [endereco_w, aprovado, distancia_vw, menor_vizinho] in buffer20:
+                """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado 
+                com uma distância menor do que a atual"""
+                if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
+                    self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
+                                                            endereco=endereco_w,
+                                                            menor_vizinho=menor_vizinho)
+                    self.mem_anterior.escrever(endereco=endereco_w, valor=aprovado)
+
+            # Informaçoes para Debug
             if len(buffer00) > max_aprovados:
                 max_aprovados = len(buffer00)
             if self.lvv.get_len_buffer() > max_buffer_lvv:
                 max_buffer_lvv = self.lvv.get_len_buffer()
         """
-        O hit e miss é influenciado pela quantidade de obstáculos, quanto mais obstáculos mais nós não são alcançados 
-        e conseguentemente menos nós são analisados, grafos sem obstáculos a quantidade de miss é igual a quantidade 
+        O hit e miss são influenciados pela quantidade de obstáculos, quanto mais obstáculos mais nós não são alcançados 
+        e conseguentemente menos nós são analisados, em grafos sem obstáculos a quantidade de miss é igual a quantidade 
         de nós.
         0 obstáculos 7.6x mais hit
         1/5 de obstáculos temos 6x mais hit
@@ -177,8 +168,8 @@ if __name__ == '__main__':
     grafico = True
     # teste = True
     # grafico = False
-    num_nos = 157
-    inicio = 100
+    num_nos = 43
+    inicio = 30
     tem_obstaculo = True
     # tem_obstaculo = False
 

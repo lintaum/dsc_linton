@@ -42,8 +42,9 @@ class LocalizadorVizinhosValidos():
             for relacao, obstaculo, custo in relacoes:
                 if obstaculo == 0:
                     if self.mem_estabelecidos.ler(relacao) == 0:
+                        # Para quando tiver um obstáculo e não houver vizinho válido
                         if self.get_menor_vizinho(relacao):
-                            relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)[1]])
+                            relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)[2]])
             return relacoes_validas
         else:
             self.miss += 1
