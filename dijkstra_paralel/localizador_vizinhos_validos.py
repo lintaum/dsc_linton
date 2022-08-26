@@ -14,8 +14,8 @@ class LocalizadorVizinhosValidos():
         self.mem_estabelecidos = mem_estabelecidos
 
     def buscar_memoria(self, no):
-        relacoes = self.mem_relacoes.ler(no)
-        self.local_buffer[no] = relacoes
+        self.miss += 1
+        self.local_buffer[no] = self.mem_relacoes.ler(no)
 
     def remover_do_buffer(self, no):
         self.local_buffer.pop(no)
@@ -29,7 +29,6 @@ class LocalizadorVizinhosValidos():
                 if obstaculo == 0:
                     return relacao, obstaculo, custo
         else:
-            self.miss += 1
             self.buscar_memoria(no)
             return self.get_menor_vizinho(no)
 
@@ -48,7 +47,6 @@ class LocalizadorVizinhosValidos():
                             relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)[2]])
             return relacoes_validas
         else:
-            self.miss += 1
             self.buscar_memoria(no)
             return self.get_relacoes(no)
 

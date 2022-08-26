@@ -36,13 +36,9 @@ class DijkstraParallel():
             for relacao, custo in relacoes.items():
                 if relacao[1] in obstaculos:
                     relacao_list.append((relacao[1], 1, custo))
-                else:
-                    relacao_list.append((relacao[1], 0, custo))
-
-            for relacao, custo in relacoes.items():
-                if relacao[1] in obstaculos:
                     obstaculo_list.append((relacao[1], 1))
                 else:
+                    relacao_list.append((relacao[1], 0, custo))
                     obstaculo_list.append((relacao[1], 0))
 
             """Inicializando memória de relações"""
@@ -165,7 +161,7 @@ def lista_obstaculos_plot(obstaculos):
 
 if __name__ == '__main__':
     teste = False
-    grafico = True
+    grafico = False
     # teste = True
     # grafico = False
     num_nos = 43
