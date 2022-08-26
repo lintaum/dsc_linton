@@ -42,7 +42,6 @@ class AvaliadorAtivos:
             self.max_ocupacao = count
         return self.max_ocupacao
 
-
     def get_buffer_vazio(self):
         """Identifica o espaço no buffer que está vazio e apto para receber dados"""
         for endereco_buffer, no in self.buffer_ativos.items():
@@ -60,6 +59,7 @@ class AvaliadorAtivos:
         self.buffer_ativos[endereco_buffer] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia, endereco=endereco, ativo=True)
 
     def remover_no_buffer(self, endereco):
+        # para debug
         self.get_ocupacao_buffer()
         endereco_buffer = self.get_buff_addr(endereco)
         self.buffer_ativos[endereco_buffer].ativo = False
