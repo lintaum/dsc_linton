@@ -41,6 +41,7 @@ class LocalizadorVizinhosValidos():
             relacoes_validas = []
             for relacao, obstaculo, custo in relacoes:
                 if obstaculo == 0:
+                    # Remove os nós estabelecidos
                     if self.mem_estabelecidos.ler(relacao) == 0:
                         # Para quando tiver um obstáculo e não houver vizinho válido
                         if self.get_menor_vizinho(relacao):
