@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-08-29 11:10:00
+//  Last Modified : 2022-08-30 11:17:28
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -22,9 +22,14 @@ module gerenciador_ativos
             input desativar_in,
             input atualizar_in,
             input [ADR_WIDTH-1:0] endereco_in,
+            input [ADR_WIDTH-1:0] anterior_in,
             input [ADR_WIDTH*NUM_NA-1:0] na_endereco_in,
             input [NUM_NA-1:0] na_ativo_in,
-            output reg [NUM_NA-1:0] habilitar_out
+            output reg ga_desativar_out,
+            output reg ga_atualizar_out,
+            output reg [ADR_WIDTH-1:0] ga_anterior_out,
+            output reg [ADR_WIDTH-1:0] ga_endereco_out,
+            output reg [NUM_NA-1:0] ga_habilitar_out
         );
 //*******************************************************
 //Internal
@@ -94,6 +99,35 @@ always @(*) begin
         end 
         ST_ENCONTROU: next_state = ST_IDLE;
     endcase
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        ga_desativar_out <= 1'b0;
+        ga_atualizar_out <= 1'b0;
+    end
+    else begin
+        if (state == ST_IDLE) begin
+            ga_desativar_out <= 1'b0;
+            ga_atualizar_out <= 1'b0;
+        end
+        else if (state == ST_ATUALIZAR)
+            ga_atualizar_out <= 1'b1;
+        else if (state == ST_DESATIVAR)
+            ga_desativar_out <= 1'b1;
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        ga_endereco_out <= {ADR_WIDTH{1'b0}};
+        ga_anterior_out <= {ADR_WIDTH{1'b0}};
+    end
+    else begin
+        if (state == ST_ENCONTROU)
+            ga_endereco_out <= endereco_in;
+            ga_anterior_out <= anterior_in;
+    end
 end
 
 //*******************************************************
@@ -173,16 +207,16 @@ endgenerate
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        habilitar_out <= {NUM_NA{1'b0}};
+        ga_habilitar_out <= {NUM_NA{1'b0}};
     end
     else if (state == ST_ENCONTROU) begin
         if (tem_hit)
-            habilitar_out <= hit;
+            ga_habilitar_out <= hit;
         else
-            habilitar_out <= hit_fifo;
+            ga_habilitar_out <= hit_fifo;
     end
     else
-        habilitar_out <= {NUM_NA{1'b0}};
+        ga_habilitar_out <= {NUM_NA{1'b0}};
 end
 
 //*******************************************************
