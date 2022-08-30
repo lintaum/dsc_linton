@@ -82,7 +82,8 @@ begin : STATUS_COUNTER
 end 
    
 //`ifdef SIM
-dual_port_ram_reg 
+// dual_port_ram_reg 
+dual_port_ram
   #(
     .DATA_WIDTH(DATA_WIDTH),
     .ADDR_WIDTH(ADDR_WIDTH)

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : dual_port_ram.v
 //  Created On    : 2018-05-17 08:31:35
-//  Last Modified : 2018-07-01 09:22:13
+//  Last Modified : 2022-08-29 09:29:03
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : SENAI
@@ -33,9 +33,9 @@ reg [DATA_WIDTH-1:0] mem [0:MEM_SIZE-1];
 
 always @(posedge clk, negedge rst_n) begin : proc_mem
 	if(!rst_n) begin
-		for (int i = 0; i < MEM_SIZE; i++) begin
-			mem[i] <= {DATA_WIDTH{1'b0}};
-		end
+		// for (int i = 0; i < MEM_SIZE; i++) begin
+		// 	mem[i] <= {DATA_WIDTH{1'b0}};
+		// end
 	end else begin
 		if (write_en_i)
 			mem[write_addr_i] <= data_i;

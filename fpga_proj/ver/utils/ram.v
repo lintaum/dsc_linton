@@ -34,9 +34,9 @@ integer i;
 
 always @(posedge clk, negedge rst_n) begin : proc_mem
 	if(!rst_n) begin
-		for (i = 0; i < MEM_SIZE; i++) begin
-			mem[i] <= {DATA_WIDTH{1'b0}};
-		end
+//		for (i = 0; i < MEM_SIZE; i++) begin
+//			mem[i] <= {DATA_WIDTH{1'b0}};
+//		end
 	end else begin
 		if (write_en_i)
 		mem[address_i] <= data_i;

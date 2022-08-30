@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-08-26 11:23:01
+//  Last Modified : 2022-08-29 11:10:00
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -14,7 +14,7 @@
 module gerenciador_ativos
         #(
             parameter NUM_NA = 8,
-            parameter ADR_WIDTH = 5,
+            parameter ADR_WIDTH = 5
         )
         (/*autoport*/
             input clk,
@@ -24,38 +24,44 @@ module gerenciador_ativos
             input [ADR_WIDTH-1:0] endereco_in,
             input [ADR_WIDTH*NUM_NA-1:0] na_endereco_in,
             input [NUM_NA-1:0] na_ativo_in,
-            output [NUM_NA-1:0] habilitar_out
+            output reg [NUM_NA-1:0] habilitar_out
         );
 //*******************************************************
 //Internal
 //*******************************************************
 //Local Parameters
-localparam STATE_WIDTH = 3
+localparam STATE_WIDTH = 3;
 localparam ST_IDLE = 0;
-localparam ST_PROCURANDO = 1;
-localparam ST_DESATIVAR = 2;
-localparam ST_ATUALIZAR = 3;
+localparam ST_DESATIVAR = 1;
+localparam ST_ATUALIZAR = 2;
+localparam ST_PROCURANDO = 3;
 localparam ST_ENCONTROU = 4;
 localparam COUNT_WIDTH = 3;
 
 //Wires
-wire [CUSTO_WIDTH-1:0] na_endereco_2d [0:NUM_VIZINHOS-1];
+genvar i;
+wire [ADR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
 wire fifo_full;
 wire fifo_almost_full;
 wire fifo_empty;
 wire fifo_almost_empty;
 wire [ADR_WIDTH-1:0] fifo_data_out;
+wire tem_vazio;
+wire [NUM_NA -1:0] hit;
+wire [NUM_NA -1:0] hit_fifo;
 //Registers
 reg [STATE_WIDTH-1:0] state, next_state;
-reg [NUM_VIZINHOS-1:0] hit;
-reg [COUNT_WIDTH-1:0] count;
+reg [NUM_NA-1:0] count;
 reg tem_hit;
-reg tem_vazio;
 reg ler_fifo;
-reg [ADR_WIDTH-1:0] fifo_data_in;
+reg escrever_fifo;
+reg [NUM_NA-1:0] fifo_data_in;
 //*******************************************************
 //FSM
 //*******************************************************
+
+assign tem_vazio = !fifo_empty;
+
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         state <= ST_IDLE;
@@ -70,15 +76,15 @@ always @(*) begin
     case (state)
         ST_IDLE: begin
             if (desativar_in)
-                next_state = ST_DESATIVAR
+                next_state = ST_DESATIVAR;
             else if (atualizar_in)
-                next_state = ST_ATUALIZAR
+                next_state = ST_ATUALIZAR;
         end
         ST_DESATIVAR:
             if (tem_hit)
                 next_state = ST_ENCONTROU;
         ST_ATUALIZAR:
-            if (tem_hit || tem_vazio)
+            if (tem_hit)
                 next_state = ST_ENCONTROU;
             else
                 next_state = ST_PROCURANDO;
@@ -99,9 +105,12 @@ always @(posedge clk or negedge rst_n) begin
         escrever_fifo <= 1'b0;
     end
     else begin
-        if (na_ativo_in[count] == 1'b0 && !fifo_almost_full) begin
+        if (na_ativo_in[count] == 1'b0 && !fifo_almost_full && !fifo_full) begin
             fifo_data_in <= count;
             escrever_fifo <= 1'b1;
+        end
+        else begin
+            escrever_fifo <= 1'b0;
         end
     end
 end
@@ -114,17 +123,20 @@ always @(posedge clk or negedge rst_n) begin
         if (state == ST_PROCURANDO) begin
             ler_fifo <= 1'b1;
         end
+        else begin
+            ler_fifo <= 1'b0;
+        end
     end
 end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        count = {COUNT_WIDTH{1'b0}};
+        count = {NUM_NA{1'b0}};
     end
     else begin
-        if (!fifo_almost_full) begin
+        if (!fifo_almost_full && !fifo_full) begin
             if (count == NUM_NA-1)
-                count = {COUNT_WIDTH{1'b0}};
+                count = {NUM_NA{1'b0}};
             else
                 count = count + 1'b1;
         end
@@ -136,15 +148,17 @@ end
 //*******************************************************
 //Verificando se o endereço se encontra armazenado e ativo, 
 //só pode existir um endereço por nó
-always @(*) begin
-    tem_hit = 1'b0;
-    hit = {NUM_NA{1'b0}};
+// always @(*) begin
+generate
     for (i = 0; i < NUM_NA; i = i + 1)begin
-        if ((na_endereco_2d[i] == endereco_in) && na_ativo_in[i]) begin
-            tem_hit = 1'b1;
-            hit[i] = 1'b1;
-        end
+        assign hit[i] = ((na_endereco_2d[i] == endereco_in) && na_ativo_in[i]) ? 1'b1: 1'b0;
+        assign hit_fifo[i] = fifo_data_out == i ? 1'b1: 1'b0;
     end
+endgenerate
+// end
+
+always @(*) begin
+    tem_hit = |hit;
 end
 
 //Convertendo entrada 1d para 2d
@@ -162,8 +176,13 @@ always @(posedge clk or negedge rst_n) begin
         habilitar_out <= {NUM_NA{1'b0}};
     end
     else if (state == ST_ENCONTROU) begin
-        habilitar_out <= hit;
+        if (tem_hit)
+            habilitar_out <= hit;
+        else
+            habilitar_out <= hit_fifo;
     end
+    else
+        habilitar_out <= {NUM_NA{1'b0}};
 end
 
 //*******************************************************
@@ -173,7 +192,7 @@ end
 syn_fifo 
 #(
     .DATA_WIDTH(NUM_NA),
-    .ADDR_WIDTH(2),
+    .ADDR_WIDTH(2)
   )
 fifo_vazios
   (
