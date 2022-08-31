@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-08-30 10:20:24
+//  Last Modified : 2022-08-31 09:32:14
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -35,7 +35,8 @@ module no_ativo
 			output reg [ADR_WIDTH-1:0] na_anterior_out,
 			output reg na_aprovado_out,
 			output reg [ADR_WIDTH-1:0] na_endereco_out,
-			output reg na_ativo_out
+			output reg na_ativo_out,
+			output reg na_nova_menor_distancia_out
 
 		);
 //*******************************************************
@@ -44,15 +45,15 @@ module no_ativo
 //Local Parameters
 
 //Wires
-wire ativar, atualizar, menor_distancia, aprovado;
+wire ativar, atualizar, nova_menor_distancia, aprovado;
 //Registers
 reg [CUSTO_WIDTH-1:0] menor_vizinho_r;
 //General Purpose Signals
 //*******************************************************
-assign ativar = atualizar_in & !na_ativo_out;
-assign desativar = desativar_in & na_ativo_out;
-assign atualizar = atualizar_in & na_ativo_out;
-assign menor_distancia = na_distancia_out > distancia_in;
+assign ativar = (atualizar_in & !na_ativo_out) & ga_habilitar_in;
+assign desativar = (desativar_in & na_ativo_out) & ga_habilitar_in;
+assign atualizar = (atualizar_in & na_ativo_out) & ga_habilitar_in;
+assign nova_menor_distancia = na_distancia_out > distancia_in;
 assign aprovado = !desativar &(ca_criterio_geral_in >= na_distancia_out) & na_ativo_out;
 
 
@@ -62,7 +63,7 @@ always @(posedge clk or negedge rst_n) begin
 	end
 	else begin
 		// Momento de ativação
-		if (ga_habilitar_in & ativar) begin
+		if (ativar) begin
 			menor_vizinho_r <= menor_vizinho_in;
 		end
 	end
@@ -89,7 +90,7 @@ always @(posedge clk or negedge rst_n) begin
 	end
 	else begin
 		// Momento de ativação
-		if (ga_habilitar_in & ativar) begin
+		if (ativar) begin
 			na_endereco_out <= endereco_in;
 		end
 	end
@@ -101,17 +102,15 @@ always @(posedge clk or negedge rst_n) begin
 		na_anterior_out <= {CRITERIO_WIDTH{1'b1}};
 	end
 	else begin
-		if (ga_habilitar_in) begin
-			// Momento de ativação
-			if (ativar) begin
-				na_distancia_out <= distancia_in;
-				na_anterior_out <= anterior_in;
-			end
-			// Já se enconstra ativado, apenas atualizando
-			else if (atualizar & menor_distancia) begin
-				na_distancia_out <= distancia_in;
-				na_anterior_out <= anterior_in;
-			end
+		// Momento de ativação
+		if (ativar) begin
+			na_distancia_out <= distancia_in;
+			na_anterior_out <= anterior_in;
+		end
+		// Já se enconstra ativado, apenas atualizando
+		else if (atualizar & nova_menor_distancia) begin
+			na_distancia_out <= distancia_in;
+			na_anterior_out <= anterior_in;
 		end
 	end
 end
@@ -151,6 +150,20 @@ always @(posedge clk or negedge rst_n) begin
 			na_atualizar_anterior_out<= 1'b1;
 		else
 			na_atualizar_anterior_out<= 1'b0;
+	end
+end
+
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		na_nova_menor_distancia_out <= 1'b0;
+	end
+	else begin
+		if (ativar || desativar)
+			na_nova_menor_distancia_out <= 1'b1;
+		else if (atualizar & nova_menor_distancia)
+			na_nova_menor_distancia_out <= 1'b1;
+		else
+			na_nova_menor_distancia_out <= 1'b0;
 	end
 end
 

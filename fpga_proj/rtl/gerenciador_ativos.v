@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-08-30 11:17:28
+//  Last Modified : 2022-08-31 08:58:39
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -14,7 +14,9 @@
 module gerenciador_ativos
         #(
             parameter NUM_NA = 8,
-            parameter ADR_WIDTH = 5
+            parameter ADR_WIDTH = 5,
+            parameter DISTANCIA_WIDTH = 5,
+            parameter CUSTO_WIDTH = 4
         )
         (/*autoport*/
             input clk,
@@ -25,11 +27,16 @@ module gerenciador_ativos
             input [ADR_WIDTH-1:0] anterior_in,
             input [ADR_WIDTH*NUM_NA-1:0] na_endereco_in,
             input [NUM_NA-1:0] na_ativo_in,
+            input [CUSTO_WIDTH-1:0] menor_vizinho_in,
+            input [DISTANCIA_WIDTH-1:0] distancia_in,
             output reg ga_desativar_out,
             output reg ga_atualizar_out,
             output reg [ADR_WIDTH-1:0] ga_anterior_out,
             output reg [ADR_WIDTH-1:0] ga_endereco_out,
-            output reg [NUM_NA-1:0] ga_habilitar_out
+            output reg [NUM_NA-1:0] ga_habilitar_out,
+            output reg [CUSTO_WIDTH-1:0] ga_menor_vizinho_out,
+            output reg [DISTANCIA_WIDTH-1:0] ga_distancia_out,
+            output ocupado
         );
 //*******************************************************
 //Internal
@@ -54,19 +61,24 @@ wire [ADR_WIDTH-1:0] fifo_data_out;
 wire tem_vazio;
 wire [NUM_NA -1:0] hit;
 wire [NUM_NA -1:0] hit_fifo;
+wire tem_hit;
 //Registers
 reg [STATE_WIDTH-1:0] state, next_state;
 reg [NUM_NA-1:0] count;
-reg tem_hit;
 reg ler_fifo;
 reg escrever_fifo;
 reg [NUM_NA-1:0] fifo_data_in;
+
+//*******************************************************
+//Flag signals
+//*******************************************************
+assign ocupado = state != ST_IDLE;
+assign tem_vazio = !fifo_empty;
+assign tem_hit = |hit;
+
 //*******************************************************
 //FSM
 //*******************************************************
-
-assign tem_vazio = !fifo_empty;
-
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         state <= ST_IDLE;
@@ -101,32 +113,27 @@ always @(*) begin
     endcase
 end
 
+//*******************************************************
+//Registrando as entradas
+//*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         ga_desativar_out <= 1'b0;
         ga_atualizar_out <= 1'b0;
+        ga_endereco_out <= {ADR_WIDTH{1'b0}};
+        ga_anterior_out <= {ADR_WIDTH{1'b0}};
+        ga_menor_vizinho_out <= {CUSTO_WIDTH{1'b0}};
+        ga_distancia_out <= {DISTANCIA_WIDTH{1'b0}};
     end
     else begin
         if (state == ST_IDLE) begin
-            ga_desativar_out <= 1'b0;
-            ga_atualizar_out <= 1'b0;
-        end
-        else if (state == ST_ATUALIZAR)
-            ga_atualizar_out <= 1'b1;
-        else if (state == ST_DESATIVAR)
-            ga_desativar_out <= 1'b1;
-    end
-end
-
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        ga_endereco_out <= {ADR_WIDTH{1'b0}};
-        ga_anterior_out <= {ADR_WIDTH{1'b0}};
-    end
-    else begin
-        if (state == ST_ENCONTROU)
             ga_endereco_out <= endereco_in;
             ga_anterior_out <= anterior_in;
+            ga_desativar_out <= desativar_in;
+            ga_atualizar_out <= atualizar_in;
+            ga_menor_vizinho_out <= menor_vizinho_in;
+            ga_distancia_out <= distancia_in;
+        end
     end
 end
 
@@ -165,14 +172,14 @@ end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        count = {NUM_NA{1'b0}};
+        count <= {NUM_NA{1'b0}};
     end
     else begin
         if (!fifo_almost_full && !fifo_full) begin
             if (count == NUM_NA-1)
-                count = {NUM_NA{1'b0}};
+                count <= {NUM_NA{1'b0}};
             else
-                count = count + 1'b1;
+                count <= count + 1'b1;
         end
     end
 end
@@ -185,15 +192,11 @@ end
 // always @(*) begin
 generate
     for (i = 0; i < NUM_NA; i = i + 1)begin
-        assign hit[i] = ((na_endereco_2d[i] == endereco_in) && na_ativo_in[i]) ? 1'b1: 1'b0;
+        assign hit[i] = ((na_endereco_2d[i] == ga_endereco_out) && na_ativo_in[i]) ? 1'b1: 1'b0;
         assign hit_fifo[i] = fifo_data_out == i ? 1'b1: 1'b0;
     end
 endgenerate
 // end
-
-always @(*) begin
-    tem_hit = |hit;
-end
 
 //Convertendo entrada 1d para 2d
 generate

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-08-30 10:49:11
+//  Last Modified : 2022-08-31 10:37:47
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -20,7 +20,10 @@ module classificar_ativo
 		(/*autoport*/
 			input clk,
 			input rst_n,
+			input [NUM_NA-1:0] aa_atualizar_in,
+			input [NUM_NA-1:0] na_ativo_in,
 			input [NUM_NA*CRITERIO_WIDTH-1:0] na_criterio_in,
+			output reg pronto,
 			output reg [CRITERIO_WIDTH-1:0] ca_criterio_geral_out
 			
 		);
@@ -28,15 +31,18 @@ module classificar_ativo
 //Internal
 //*******************************************************
 //Local Parameters
-
-//Wires
+localparam COUNT_WIDTH = 3;
 genvar i;
+//Wires
 wire [ADR_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
 //Registers
+reg [COUNT_WIDTH-1:0] count;
 
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
+assign parar_contagem = count == NUM_NA-1;
+
 //Convertendo entrada 1d para 2d
 generate
     for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
@@ -44,17 +50,46 @@ generate
     end
 endgenerate
 
-// Refazer isso aqui depois
-always @(*) begin
-	ca_criterio_geral_out = na_criterio_2d[0];
-	// for (i = 1; i < NUM_NA; i = i + 1) begin:identifier
-	// 	if (na_criterio_2d < ca_criterio_geral_out)
-	// 		ca_criterio_geral_out = na_criterio_2d;
-	// end
+always @(posedge clk or negedge rst_n) begin
+   if (!rst_n) begin
+      count <= {COUNT_WIDTH{1'b0}};
+   end
+   else begin
+   		if (parar_contagem) begin
+         	count <= {COUNT_WIDTH{1'b0}};
+      	end
+      	else if (aa_atualizar_in || count != 0)
+      		count <= count +1'b1;
+   end
 end
+
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		pronto <= 1'b0;
+	end
+	else begin
+		if (aa_atualizar_in)
+			pronto <= 1'b0;
+		else if (parar_contagem)
+			pronto <= 1'b1;
+	end
+end
+
 //*******************************************************
 //Outputs
 //*******************************************************
+// Otimizar essa lógica para paralelo
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		ca_criterio_geral_out <= {CRITERIO_WIDTH{1'b1}};
+	end
+	else begin
+		if (aa_atualizar_in)
+			ca_criterio_geral_out = na_criterio_2d[0];
+		else if ((ca_criterio_geral_out > na_criterio_2d[count]) & na_ativo_in[count])
+			ca_criterio_geral_out <= na_criterio_2d[count];
+	end
+end
 
 //*******************************************************
 //Instantiations

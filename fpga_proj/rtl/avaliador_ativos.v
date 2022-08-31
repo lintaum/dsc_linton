@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-08-30 11:26:18
+//  Last Modified : 2022-08-31 10:36:53
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -36,22 +36,28 @@ module avaliador_ativos
 //Local Parameters
 genvar i;
 //Wires
+// no ativo
 wire [ADR_WIDTH*NUM_NA-1:0] na_endereco_1d;
 wire [ADR_WIDTH-1:0] na_endereco_2d [NUM_NA-1:0];
-wire [ADR_WIDTH-1:0] ga_endereco;
-wire [NUM_NA-1:0] na_ativo;
-wire [NUM_NA-1:0] ga_habilitar;
-wire [ADR_WIDTH-1:0] ga_anterior;
 wire [NUM_NA-1:0] na_aprovado;
 wire [NUM_NA-1:0] na_atualizar_anterior;
 wire [ADR_WIDTH-1:0] na_anterior_2d [NUM_NA-1:0];
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [NUM_NA-1:0];
 wire [CRITERIO_WIDTH*NUM_NA-1:0] na_criterio_1d;
-wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
-
-// Implementar esses sinais no GA
+wire [NUM_NA-1:0] na_ativo;
+wire [NUM_NA-1:0] na_nova_menor_distancia;
+// gerenciador ativos
+wire [ADR_WIDTH-1:0] ga_endereco;
+wire [NUM_NA-1:0] ga_habilitar;
+wire [ADR_WIDTH-1:0] ga_anterior;
+wire [CUSTO_WIDTH-1:0] ga_menor_vizinho;
+wire [DISTANCIA_WIDTH-1:0] ga_distancia;
 wire ga_atualizar;
 wire ga_desativar;
+// classificador ativos
+wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
+// avaliador ativos
+wire aa_atualizar_classificacao;
 //Registers
 
 //*******************************************************
@@ -74,7 +80,9 @@ endgenerate
 gerenciador_ativos
 	#(
         .NUM_NA(NUM_NA),
-        .ADR_WIDTH(ADR_WIDTH)
+        .ADR_WIDTH(ADR_WIDTH),
+        .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
+        .CUSTO_WIDTH(CUSTO_WIDTH)      
     )
     gerenciador_ativos_u0
     (/*autoport*/
@@ -86,11 +94,15 @@ gerenciador_ativos
         .anterior_in(anterior_in),
         .na_endereco_in(na_endereco_1d),
         .na_ativo_in(na_ativo),
+        .menor_vizinho_in(menor_vizinho_in),
+        .distancia_in(distancia_in),
         .ga_anterior_out(ga_anterior),
         .ga_atualizar_out(ga_atualizar),
         .ga_endereco_out(ga_endereco),
         .ga_desativar_out(ga_desativar),
-        .ga_habilitar_out(ga_habilitar)
+        .ga_habilitar_out(ga_habilitar),
+        .ga_menor_vizinho_out(ga_menor_vizinho),
+        .ga_distancia_out(ga_distancia)
     );
 
 generate
@@ -107,8 +119,8 @@ generate
     (/*autoport*/
       .clk(clk),
       .rst_n(rst_n),
-      .menor_vizinho_in(menor_vizinho_in),
-      .distancia_in(distancia_in),
+      .menor_vizinho_in(ga_menor_vizinho),
+      .distancia_in(ga_distancia),
       .ca_criterio_geral_in(ca_criterio_geral),
       .anterior_in(ga_anterior),
       .endereco_in(ga_endereco),
@@ -121,10 +133,13 @@ generate
       .na_anterior_out(na_anterior_2d[i]),
       .na_aprovado_out(na_aprovado[i]),
       .na_endereco_out(na_endereco_2d[i]),
-      .na_ativo_out(na_ativo[i])
+      .na_ativo_out(na_ativo[i]),
+      .na_nova_menor_distancia_out(na_nova_menor_distancia[i])
     );
   end
 endgenerate
+
+assign aa_atualizar_classificacao = |na_nova_menor_distancia;
 
 classificar_ativo
 		#(
@@ -137,7 +152,8 @@ classificar_ativo
 			.clk(clk),
 			.rst_n(rst_n),
 			.na_criterio_in(na_criterio_1d),
-			.ca_criterio_geral_out(ca_criterio_geral)
-			
+      .na_ativo_in(na_ativo),
+			.ca_criterio_geral_out(ca_criterio_geral),
+      .aa_atualizar_in(aa_atualizar_classificacao)
 		);
 endmodule

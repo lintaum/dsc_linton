@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-08-30 11:02:39
+//  Last Modified : 2022-08-31 08:38:42
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -67,14 +67,25 @@ initial begin
   repeat(1)@(negedge clk);
   atualizar(1, 2, 5, 20);
 
-  repeat(1)@(negedge clk);
+  repeat(5)@(negedge clk);
   atualizar(3, 2, 5, 10);
 
-  repeat(1)@(negedge clk);
+  repeat(5)@(negedge clk);
   atualizar(4, 2, 5, 15);
 
-  repeat(2)@(negedge clk);
+  repeat(1)@(negedge clk);
+  atualizar(1, 4, 5, 20);
+
+  repeat(5)@(negedge clk);
+  atualizar(3, 4, 5, 10);
+
+  repeat(5)@(negedge clk);
+  atualizar(4, 4, 5, 15);
+
+  repeat(5)@(negedge clk);
   desativar(2);
+  repeat(5)@(negedge clk);
+  desativar(4);
 
 end
 //*******************************************************
