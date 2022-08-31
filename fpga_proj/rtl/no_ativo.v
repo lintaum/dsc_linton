@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-08-31 09:32:14
+//  Last Modified : 2022-08-31 11:21:44
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -54,7 +54,7 @@ assign ativar = (atualizar_in & !na_ativo_out) & ga_habilitar_in;
 assign desativar = (desativar_in & na_ativo_out) & ga_habilitar_in;
 assign atualizar = (atualizar_in & na_ativo_out) & ga_habilitar_in;
 assign nova_menor_distancia = na_distancia_out > distancia_in;
-assign aprovado = !desativar &(ca_criterio_geral_in >= na_distancia_out) & na_ativo_out;
+assign aprovado = !desativar & (ca_criterio_geral_in >= na_distancia_out) & na_ativo_out;
 
 
 always @(posedge clk or negedge rst_n) begin
@@ -62,7 +62,7 @@ always @(posedge clk or negedge rst_n) begin
 		menor_vizinho_r <= {CUSTO_WIDTH{1'b0}};
 	end
 	else begin
-		// Momento de ativação
+		// Momento de ativação salvar o menor vizinho
 		if (ativar) begin
 			menor_vizinho_r <= menor_vizinho_in;
 		end

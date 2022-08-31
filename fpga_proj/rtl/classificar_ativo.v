@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-08-31 10:37:47
+//  Last Modified : 2022-08-31 10:42:18
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -20,7 +20,7 @@ module classificar_ativo
 		(/*autoport*/
 			input clk,
 			input rst_n,
-			input [NUM_NA-1:0] aa_atualizar_in,
+			input aa_atualizar_in,
 			input [NUM_NA-1:0] na_ativo_in,
 			input [NUM_NA*CRITERIO_WIDTH-1:0] na_criterio_in,
 			output reg pronto,
