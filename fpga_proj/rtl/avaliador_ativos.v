@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-08-31 11:05:22
+//  Last Modified : 2022-09-01 09:20:44
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -13,7 +13,7 @@
 //==================================================================================================
 module avaliador_ativos
 		#(
-      parameter NUM_NA = 8,
+      parameter NUM_NA = 4,
       parameter ADR_WIDTH = 5,
       parameter DISTANCIA_WIDTH = 5,
       parameter CRITERIO_WIDTH = 5,
@@ -55,8 +55,10 @@ wire [CUSTO_WIDTH-1:0] ga_menor_vizinho;
 wire [DISTANCIA_WIDTH-1:0] ga_distancia;
 wire ga_atualizar;
 wire ga_desativar;
+wire ga_ocupado;
 // classificador_ativos
 wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
+wire ca_pronto;
 // avaliador ativos
 wire aa_atualizar_classificacao;
 //Registers
@@ -104,6 +106,7 @@ gerenciador_ativos
         .ga_desativar_out(ga_desativar),
         .ga_habilitar_out(ga_habilitar),
         .ga_menor_vizinho_out(ga_menor_vizinho),
+        .ga_ocupado_o(ga_ocupado),
         .ga_distancia_out(ga_distancia)
     );
 
@@ -156,6 +159,7 @@ classificar_ativo
 			.na_criterio_in(na_criterio_1d),
       .na_ativo_in(na_ativo),
 			.ca_criterio_geral_out(ca_criterio_geral),
-      .aa_atualizar_in(aa_atualizar_classificacao)
+      .aa_atualizar_in(aa_atualizar_classificacao),
+      .ca_pronto_o(ca_pronto)
 		);
 endmodule

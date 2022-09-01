@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-08-31 10:42:18
+//  Last Modified : 2022-09-01 08:07:02
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -23,7 +23,7 @@ module classificar_ativo
 			input aa_atualizar_in,
 			input [NUM_NA-1:0] na_ativo_in,
 			input [NUM_NA*CRITERIO_WIDTH-1:0] na_criterio_in,
-			output reg pronto,
+			output reg ca_pronto_o,
 			output reg [CRITERIO_WIDTH-1:0] ca_criterio_geral_out
 			
 		);
@@ -65,13 +65,13 @@ end
 
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
-		pronto <= 1'b0;
+		ca_pronto_o <= 1'b0;
 	end
 	else begin
 		if (aa_atualizar_in)
-			pronto <= 1'b0;
+			ca_pronto_o <= 1'b0;
 		else if (parar_contagem)
-			pronto <= 1'b1;
+			ca_pronto_o <= 1'b1;
 	end
 end
 

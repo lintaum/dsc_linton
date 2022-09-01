@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-08-31 08:58:39
+//  Last Modified : 2022-09-01 09:15:38
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -36,7 +36,9 @@ module gerenciador_ativos
             output reg [NUM_NA-1:0] ga_habilitar_out,
             output reg [CUSTO_WIDTH-1:0] ga_menor_vizinho_out,
             output reg [DISTANCIA_WIDTH-1:0] ga_distancia_out,
-            output ocupado
+            output ga_ocupado_o,
+            // Indica que existem NA disponíveis para receber dados
+            output ga_buffers_cheios_o
         );
 //*******************************************************
 //Internal
@@ -49,7 +51,7 @@ localparam ST_ATUALIZAR = 2;
 localparam ST_PROCURANDO = 3;
 localparam ST_ENCONTROU = 4;
 localparam COUNT_WIDTH = 3;
-
+localparam FIDO_ADD_WIDTH = $clog2(NUM_NA);
 //Wires
 genvar i;
 wire [ADR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
@@ -72,7 +74,8 @@ reg [NUM_NA-1:0] fifo_data_in;
 //*******************************************************
 //Flag signals
 //*******************************************************
-assign ocupado = state != ST_IDLE;
+assign ga_buffers_cheios_o = tem_vazio;
+assign ga_ocupado_o = state != ST_IDLE;
 assign tem_vazio = !fifo_empty;
 assign tem_hit = |hit;
 
@@ -88,6 +91,7 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+// Essa FSM pode ser melhorada
 always @(*) begin
     next_state = state;
     case (state)
@@ -229,7 +233,7 @@ end
 syn_fifo 
 #(
     .DATA_WIDTH(NUM_NA),
-    .ADDR_WIDTH(2)
+    .ADDR_WIDTH(FIDO_ADD_WIDTH)
   )
 fifo_vazios
   (

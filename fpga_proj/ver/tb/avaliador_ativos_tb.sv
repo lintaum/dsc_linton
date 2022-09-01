@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-08-31 08:38:42
+//  Last Modified : 2022-09-01 09:28:59
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,8 +19,8 @@ module avaliador_ativos_tb
 //Internal
 //*******************************************************
 //Local Parameters
-localparam NUM_NA =  8;
-localparam ADR_WIDTH =  5;
+localparam NUM_NA =  4;
+localparam ADR_WIDTH =  $clog2(NUM_NA);
 localparam DISTANCIA_WIDTH =  5;
 localparam CRITERIO_WIDTH =  5;
 localparam CUSTO_WIDTH =  4;
@@ -74,13 +74,13 @@ initial begin
   atualizar(4, 2, 5, 15);
 
   repeat(1)@(negedge clk);
-  atualizar(1, 4, 5, 20);
+  atualizar(1, 3, 5, 20);
 
   repeat(5)@(negedge clk);
-  atualizar(3, 4, 5, 10);
+  atualizar(3, 3, 5, 10);
 
   repeat(5)@(negedge clk);
-  atualizar(4, 4, 5, 15);
+  atualizar(4, 3, 5, 15);
 
   repeat(5)@(negedge clk);
   desativar(2);

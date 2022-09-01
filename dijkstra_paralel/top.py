@@ -86,7 +86,7 @@ class DijkstraParallel():
                     """Atualizando os vizinhos do nó aprovado, 
                     O atualizador de vizinhos foi removido devido a necessidade de acessar a memória para consultar a 
                     distancia de w, desse modo a distancia só é consultada na etapa final do pipeline, isso aumenta o gasto 
-                    computacional pois sempre irá analisar todos os nós, no entanto, também reduz e centraliza o acesso de 
+                    computacional pois sempre irá analisar todos os nós, no entanto, reduz e centraliza o acesso de 
                     leitura aos buffer do avaliador de ativos."""
                     distancia_vw = distancia_v + custo_vw
                     buffer20.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
