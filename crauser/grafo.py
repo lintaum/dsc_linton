@@ -31,6 +31,8 @@ class Grafo():
                     relacoes[relacao]=custo
         return relacoes
 
+
+
     def get_custo(self, no_1, no_2):
         """retorna o custo entre dois nós vizinhos"""
         if (no_1, no_2) in self.relacoes.keys():
@@ -41,7 +43,8 @@ class Grafo():
 
     def get_menor_vizinho(self, no):
         """Retorna o custo do vizinho com a menor distância"""
-        relacoes = self.get_relacoes_no(no)
+        # relacoes = self.get_relacoes_no(no)
+        relacoes = self.get_relacoes_vizinhos(no)
         menor = None
         for vizinho, vizinho_custo in relacoes.items():
             if menor:
@@ -69,7 +72,8 @@ class Grafo():
         relacoes_vizinhas = {}
         for relacao, custo in relacoes.items():
             if relacao[0] == no:
-                relacoes_vizinhas[(relacao)]=custo
+                if relacao[1] not in self.obstaculos:
+                    relacoes_vizinhas[(relacao)]=custo
         return relacoes_vizinhas
 
     def get_relacoes_vizinhos_in(self, no):

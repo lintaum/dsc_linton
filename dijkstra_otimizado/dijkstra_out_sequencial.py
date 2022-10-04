@@ -117,9 +117,10 @@ class DijkstraCrauser:
         for no in self.empilhados:
             """o(v) = tent(v) + min{c(v, u) : (v, u) E E} - pode ser executado em paralelo"""
             """L = min{tent(u) + c(u, z) : u is queued and (u, z) E E} """
-            criterio_out = self.distancia[no] + self.grafo.get_menor_vizinho(no)
-            if criterio_out < treshold_out:
-                treshold_out = criterio_out
+            if self.grafo.get_menor_vizinho(no):
+                criterio_out = self.distancia[no] + self.grafo.get_menor_vizinho(no)
+                if criterio_out < treshold_out:
+                    treshold_out = criterio_out
 
         for no in self.empilhados:
             if self.distancia[no] <= treshold_out:
@@ -187,7 +188,7 @@ def main(num_nos=120, debug=False, grafico=False, num_onstaculos=0):
     # do stuff
     no_inicio = 0
     no_destino = num_nos-1
-    graph_gen = GraphGen(max_weigth=10)
+    graph_gen = GraphGen(max_weigth=100)
     graph_gen.adjacent_lis(nodes=num_nos)
     # graph_gen.plot()
     obstaculos = graph_gen.criar_obstaculos(fonte=no_inicio, destino=no_destino, num=num_onstaculos)
