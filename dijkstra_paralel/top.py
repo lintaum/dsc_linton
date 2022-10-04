@@ -7,6 +7,9 @@ from dijkstra_otimizado.dijkstra_out_sequencial import main as main_sequencial
 from dijkstra.dijkstra_crauser import main as main_crauser
 from crauser.random_graph import GraphGen
 import warnings
+
+from util.gen_mem_files import dict_2_vmem
+
 inf = float('inf')
 
 class DijkstraParallel():
@@ -43,17 +46,18 @@ class DijkstraParallel():
 
             """Inicializando memória de relações"""
             self.mem_relacoes.escrever(no, relacao_list)
-            self.mem_obstaculos.escrever(no, obstaculo_list)
+            # self.mem_obstaculos.escrever(no, obstaculo_list)
             """Inicializando memória de estabelecidos"""
             self.mem_estabelecidos.escrever(no, 0)
             """Repassando as memórias para o LVV"""
             self.lvv.inicializar_mem(self.mem_relacoes, self.mem_estabelecidos)
+        dict_2_vmem(self.mem_relacoes, obstaculos)
 
     def calcular_caminho(self, fonte, destino):
         # Inicializando com a fonte
         menor_vizinho = self.lvv.get_menor_vizinho(fonte)
         if menor_vizinho:
-            self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho[1])
+            self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho)
 
         # Busca até o avaliador de ativos estar vázio
         max_aprovados = 0
@@ -80,43 +84,36 @@ class DijkstraParallel():
                 """Removendo o nó aprovado do buffer em LVV"""
                 self.lvv.remover_do_buffer(aprovado)
 
-            """Passo 3 - Calculando a distância"""
-            buffer20 = []
+            """Passo 3 - Calculando a distância e atualizando"""
             for [endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v] in buffer10:
-                    """Atualizando os vizinhos do nó aprovado, 
-                    O atualizador de vizinhos foi removido devido a necessidade de acessar a memória para consultar a 
-                    distancia de w, desse modo a distancia só é consultada na etapa final do pipeline, isso aumenta o gasto 
-                    computacional pois sempre irá analisar todos os nós, no entanto, reduz e centraliza o acesso de 
-                    leitura aos buffer do avaliador de ativos."""
+                """Atualizando os vizinhos do nó aprovado, 
+                O atualizador de vizinhos foi removido devido a necessidade de acessar a memória para consultar a 
+                distancia de w, desse modo a distancia só é consultada na etapa final do pipeline, isso aumenta o 
+                gasto computacional pois sempre irá analisar todos os nós, no entanto, reduz e centraliza o acesso 
+                de leitura aos buffer do avaliador de ativos. A nova distância deve ser comparada com a distância 
+                armazenada, pois outro nó pode ter atualizado com uma distância menor do que a atual"""
+                if self.mem_estabelecidos.ler(endereco_w) == 0:
                     distancia_vw = distancia_v + custo_vw
-                    buffer20.append([endereco_w, aprovado, distancia_vw, menor_vizinho])
-
-            """Passo 4 - Atualizando"""
-            for [endereco_w, aprovado, distancia_vw, menor_vizinho] in buffer20:
-                """A nova distância deve ser comparada com a distância armazenada, pois outro nó pode ter atualizado 
-                com uma distância menor do que a atual"""
-                if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
-                    self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
-                                                            endereco=endereco_w,
-                                                            menor_vizinho=menor_vizinho)
-                    self.mem_anterior.escrever(endereco=endereco_w, valor=aprovado)
+                    if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
+                        self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
+                                                                endereco=endereco_w,
+                                                                menor_vizinho=menor_vizinho)
+                        self.mem_anterior.escrever(endereco=endereco_w, valor=aprovado)
 
             # Informaçoes para Debug
             if len(buffer00) > max_aprovados:
                 max_aprovados = len(buffer00)
             if self.lvv.get_len_buffer() > max_buffer_lvv:
                 max_buffer_lvv = self.lvv.get_len_buffer()
-        """
-        O hit e miss são influenciados pela quantidade de obstáculos, quanto mais obstáculos mais nós não são alcançados 
-        e conseguentemente menos nós são analisados, em grafos sem obstáculos a quantidade de miss é igual a quantidade 
-        de nós.
+        """ O hit e miss são influenciados pela quantidade de obstáculos, quanto mais obstáculos mais nós não são 
+        alcançados e conseguentemente menos nós são analisados, em grafos sem obstáculos a quantidade de miss é igual a 
+        quantidade de nós.
         0 obstáculos 7.6x mais hit
         1/5 de obstáculos temos 6x mais hit
         1/4 de obstáculos temos 6x mais hit
         1/3 de obstáculos temos 5x mais hit
-        1/2 de obstáculos temos 5x mais hit
-        
-        """
+        1/2 de obstáculos temos 5x mais hit"""
+
         print(f"Max Aprovados: {max_aprovados}, "
               f"Max Ativos: {self.avaliador_ativos.max_ocupacao}, "
               f"Max Buffer LVV: {max_buffer_lvv}; "
@@ -132,15 +129,21 @@ def main(num_nos=10, debug=False, grafico=False, num_onstaculos=10):
     fonte = 0
     destino = num_nos-1
 
+    """Gerando o grafo"""
     top = DijkstraParallel(num_nos=num_nos, max_num_vizinhos=6)
-    graph_gen = GraphGen(max_weigth=10)
+    graph_gen = GraphGen(max_weigth=100)
     graph_gen.adjacent_lis(nodes=num_nos)
 
+    """Definindo os obstáculos"""
     obstaculos = graph_gen.criar_obstaculos(fonte=fonte, destino=destino, num=num_onstaculos)
     # graph_gen.plot()
 
+    """Inicializando as memórias de relações e obstáculos"""
     top.inicializar_mem(graph_gen.graph, obstaculos=obstaculos)
+
+    """Calculando o menor caminho"""
     menor_caminho = top.calcular_caminho(fonte=fonte, destino=destino)
+
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if grafico:
         graph_gen.plot_path_obstaculo(menor_caminho, (lista_obstaculos_plot(top.mem_obstaculos)))
@@ -159,16 +162,16 @@ def lista_obstaculos_plot(obstaculos):
     list_obstaculos_nodes = set(list_obstaculos_nodes)
     return list_obstaculos, list_obstaculos_nodes
 
+
 if __name__ == '__main__':
     teste = False
-    grafico = False
+    grafico = True
     # teste = True
-    # grafico = False
-    num_nos = 43
+    grafico = False
+    num_nos = 500
     inicio = 30
     tem_obstaculo = True
     # tem_obstaculo = False
-
 
     if not teste:
         inicio = num_nos - 1
@@ -176,7 +179,8 @@ if __name__ == '__main__':
     for idx in range(inicio, num_nos):
         num_onstaculos = 0
         if tem_obstaculo:
-            num_onstaculos = idx/3
+            num_onstaculos = idx/4
+            # num_onstaculos = 0
         caminho, custo = main(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
         caminho2, custo2 = main_sequencial(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
 

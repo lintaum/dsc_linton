@@ -21,13 +21,16 @@ class LocalizadorVizinhosValidos():
         self.local_buffer.pop(no)
 
     def get_menor_vizinho(self, no):
-        """Retorna o menor vizinho que não é obstáculo"""
+        """Retorna o custo do menor vizinho que não é obstáculo"""
         if no in self.local_buffer.keys():
             self.hit += 1
             relacoes = self.local_buffer[no]
             for relacao, obstaculo, custo in relacoes:
+                """Essa verificação de obstáculo ira reduzir a quantidade de acessos a memoria de 
+                relações e a quantidade de informações armazenadas no buffer, no entanto, 
+                será necessário inserir uma verificação na memória de obstáculos"""
                 if obstaculo == 0:
-                    return relacao, obstaculo, custo
+                    return custo
         else:
             self.buscar_memoria(no)
             return self.get_menor_vizinho(no)
@@ -41,10 +44,10 @@ class LocalizadorVizinhosValidos():
             for relacao, obstaculo, custo in relacoes:
                 if obstaculo == 0:
                     # Remove os nós estabelecidos
-                    if self.mem_estabelecidos.ler(relacao) == 0:
-                        # Para quando tiver um obstáculo e não houver vizinho válido
-                        if self.get_menor_vizinho(relacao):
-                            relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)[2]])
+                    # if self.mem_estabelecidos.ler(relacao) == 0:
+                        # Verifica se tem obstáculos e não há vizinho válido
+                    if self.get_menor_vizinho(relacao):
+                        relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)])
             return relacoes_validas
         else:
             self.buscar_memoria(no)

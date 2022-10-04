@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-09-01 08:07:02
+//  Last Modified : 2022-10-04 07:12:29
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
