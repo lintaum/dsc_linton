@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-07 07:49:24
+//  Last Modified : 2022-10-07 14:14:22
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -59,10 +59,10 @@ wire fifo_full;
 wire fifo_almost_full;
 wire fifo_empty;
 wire fifo_almost_empty;
-wire [ADDR_WIDTH-1:0] fifo_data_out;
+wire [NUM_NA-1:0] fifo_data_out;
 wire tem_vazio;
-wire [NUM_NA -1:0] hit;
-wire [NUM_NA -1:0] hit_fifo;
+wire [NUM_NA-1:0] hit;
+wire [NUM_NA-1:0] hit_fifo;
 wire tem_hit;
 //Registers
 reg [STATE_WIDTH-1:0] state, next_state;

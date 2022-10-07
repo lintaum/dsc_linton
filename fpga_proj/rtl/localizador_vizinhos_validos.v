@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-07 08:22:34
+//  Last Modified : 2022-10-07 13:53:46
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -28,6 +28,7 @@ module localizador_vizinhos_validos
 			input [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia_in,
       		input aa_tem_ativo_in,
       		input aa_tem_aprovado_in,
+      		input cme_expandir_in,
       		// Atualizando o avaliador de ativos
       		output lvv_desativar_out,
 			output lvv_atualizar_out,
@@ -53,9 +54,10 @@ module localizador_vizinhos_validos
 //Internal
 //*******************************************************
 //Local Parameters
-
+genvar i;
 //Wires
-
+wire [ADDR_WIDTH-1:0] aa_endereco_2d [0:NUM_NA-1];
+wire [DISTANCIA_WIDTH-1:0] aa_distancia_2d [0:NUM_NA-1];
 //Registers
 
 //*******************************************************
@@ -67,6 +69,19 @@ assign lvv_endereco_out = 0;
 assign lvv_menor_vizinho_out = 0;
 assign lvv_distancia_out = 0;
 assign lvv_anterior_out = 0;
+
+//*******************************************************
+// Convertendo entradas para 2d
+//*******************************************************
+
+//Convertendo entrada 1d para 2d
+generate
+    for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
+		assign aa_endereco_2d[i] = aa_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
+		assign aa_distancia_2d[i] = aa_distancia_in[DISTANCIA_WIDTH*i+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH*i];
+    end
+endgenerate
+
 //*******************************************************
 //Outputs
 //*******************************************************

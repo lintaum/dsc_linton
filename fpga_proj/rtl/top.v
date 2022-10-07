@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-07 08:26:49
+//  Last Modified : 2022-10-07 14:18:58
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -39,8 +39,13 @@ wire cme_aguardando,
      cme_caminho_pronto,
      cme_iniciar,
      cme_expandir,
+     cme_tem_ativo_out,
      cme_construir_caminho;
 
+//sinais de saida do buffer aa
+wire [NUM_NA-1:0] buff_aa_aprovado;
+wire [ADDR_WIDTH*NUM_NA-1:0] buff_aa_endereco;
+wire [DISTANCIA_WIDTH*NUM_NA-1:0] buff_aa_distancia;
 //sinais de saida do aa
 wire [NUM_NA-1:0] aa_aprovado;
 wire [ADDR_WIDTH*NUM_NA-1:0] aa_endereco;
@@ -66,7 +71,7 @@ wire [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data;
 wire gma_obstaculos_rd_data;
 
 // sinais de controle do top
-wire [DATA_WIDTH-1:0] endereco_mix;
+wire [ADDR_WIDTH-1:0] endereco_mix;
 wire atualizar_mix;
 wire [CUSTO_WIDTH-1:0] menor_vizinho_mix;
 wire [DISTANCIA_WIDTH-1:0] distancia_mix;
@@ -75,10 +80,10 @@ reg [ADDR_WIDTH-1:0] fonte, destino;
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
-assign atualizar_mix = cme_iniciar ? 1'b1: lvv_atualizar;
-assign endereco_mix = cme_iniciar ? fonte: lvv_endereco;
-assign menor_vizinho_mix = cme_iniciar ? 0: lvv_menor_vizinho;
-assign distancia_mix = cme_iniciar ? 0: lvv_distancia;
+assign atualizar_mix = top_wr_fonte_in ? 1'b1: lvv_atualizar;
+assign endereco_mix = top_wr_fonte_in ? top_addr_fonte_in: lvv_endereco;
+assign menor_vizinho_mix = top_wr_fonte_in ? 0: lvv_menor_vizinho;
+assign distancia_mix = top_wr_fonte_in ? 0: lvv_distancia;
 
 // Salvando a fonte e o destino
 always @(posedge clk or negedge rst_n) begin
@@ -151,6 +156,7 @@ controlador_maquina_estados
             .caminho_pronto_out(cme_caminho_pronto),
             .iniciar_out(cme_iniciar),
             .expandir_out(cme_expandir),
+            .tem_ativo_out(cme_tem_ativo_out),
             .construir_caminho_out(cme_construir_caminho)
         );
 
@@ -179,6 +185,19 @@ avaliador_ativos
             .aa_tem_ativo_out(aa_tem_ativo)
         );
 
+buffer
+    #(
+        .DATA_WIDTH(NUM_NA+ADDR_WIDTH*NUM_NA+DISTANCIA_WIDTH*NUM_NA)
+    )
+    buffer_aa
+    (/*autoport*/
+        .clk(clk),
+        .rst_n(rst_n),
+        .write_en_in(cme_tem_ativo_out),
+        .data_in({aa_aprovado, aa_endereco, aa_distancia}),
+        .data_out({buff_aa_aprovado, buff_aa_endereco, buff_aa_distancia})
+    );
+
 localizador_vizinhos_validos
         #(
             .ADDR_WIDTH(ADDR_WIDTH),
@@ -192,9 +211,10 @@ localizador_vizinhos_validos
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
-            .aa_aprovado_in(aa_aprovado),
-            .aa_endereco_in(aa_endereco),
-            .aa_distancia_in(aa_distancia),
+            .cme_expandir_in(cme_expandir),
+            .aa_aprovado_in(buff_aa_aprovado),
+            .aa_endereco_in(buff_aa_endereco),
+            .aa_distancia_in(buff_aa_distancia),
             .aa_tem_ativo_in(aa_tem_ativo),
             .aa_tem_aprovado_in(aa_tem_aprovado),
             .lvv_desativar_out(lvv_desativar),
@@ -214,5 +234,7 @@ localizador_vizinhos_validos
             .lvv_estabelecidos_write_addr_out(lvv_estabelecidos_write_addr)
             
         );
+
+
 
 endmodule

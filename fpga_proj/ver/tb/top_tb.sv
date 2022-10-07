@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-07 09:32:04
+//  Last Modified : 2022-10-07 14:09:21
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -67,7 +67,7 @@ initial begin
   top_addr_destino_in = 0;
   @(posedge rst_n);
 
-  repeat(1)@(negedge clk);
+  repeat(10)@(negedge clk);
   iniciar(2, 12);
 
 end

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : controlador_maquina_estados.v
 //  Created On    : 2022-10-06 08:19:57
-//  Last Modified : 2022-10-07 09:18:58
+//  Last Modified : 2022-10-07 13:48:53
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -24,6 +24,7 @@ module controlador_maquina_estados
             output caminho_pronto_out,
             output iniciar_out,
             output expandir_out,
+            output tem_ativo_out,
             output construir_caminho_out
 		);
 //*******************************************************
@@ -62,9 +63,6 @@ always @(*) begin
         next_state = ST_INICIALIZAR;
     else begin 
         case (state)
-            // ST_IDLE:
-                // if (iniciar_in)
-                    // next_state = ST_INICIALIZAR;
             ST_INICIALIZAR:
                 // Insere a fonte no avaliador de ativos
                 if (tem_ativo_in)
@@ -96,6 +94,7 @@ assign caminho_pronto_out = state == ST_PRONTO;
 assign iniciar_out = state == ST_INICIALIZAR;
 assign expandir_out = state == ST_EXPANDIR_ATUALIZAR;
 assign construir_caminho_out = state == ST_CONSTRUIR_CAMINHO;
+assign tem_ativo_out = state == ST_TEM_ATIVO;
 //*******************************************************
 //Instantiations
 //*******************************************************
