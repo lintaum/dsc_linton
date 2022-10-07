@@ -54,30 +54,35 @@ class DijkstraParallel():
         dict_2_vmem(self.mem_relacoes, obstaculos)
 
     def calcular_caminho(self, fonte, destino):
+        # sinais de debug
+        num_passo1 = 0
+        num_passo2 = 0
+        num_passo3 = 0
         # Inicializando com a fonte
-        menor_vizinho = self.lvv.get_menor_vizinho(fonte)
-        if menor_vizinho:
-            self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=menor_vizinho)
+        self.avaliador_ativos.inserir_no_buffer(distancia=0, endereco=fonte, menor_vizinho=0)
 
         # Busca até o avaliador de ativos estar vázio
         max_aprovados = 0
         max_buffer_lvv = 0
         while self.avaliador_ativos.tem_ativo_no_buffer():
-            """Passo 1 - Estabelecendo"""
+            """Passo 1 - Identificando aprovados"""
             buffer00 = []
             aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
             for aprovado, distancia_v in aprovados_distancia:
-                """Estabelecendo os nós aprovados"""
-                self.avaliador_ativos.remover_no_buffer(aprovado)
-                self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
+                num_passo1 += 1
+                """salvando no buffer de saida"""
                 buffer00.append([aprovado, distancia_v])
 
-            """Passo 2 - Encontrando vizinhos"""
+            """Passo 2 - Encontrando vizinhos e estabelecendo"""
             buffer10 = []
             for [aprovado, distancia_v] in buffer00:
+                """Estabelecendo os nós aprovados e removendo do gerenciador de ativos"""
+                self.mem_estabelecidos.escrever(endereco=aprovado, valor=1)
+                self.avaliador_ativos.remover_no_buffer(aprovado)
                 """Encontrando os vizinhos de um nó aprovado"""
                 relacoes_aprovado = self.lvv.get_relacoes(aprovado)
                 for [endereco_w, custo_vw, menor_vizinho] in relacoes_aprovado:
+                    num_passo2 += 1
                     """Transformando em um buffer para aumentar o paralelismo, 
                     basicamente transformando de 2d para 1d"""
                     buffer10.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
@@ -93,6 +98,7 @@ class DijkstraParallel():
                 de leitura aos buffer do avaliador de ativos. A nova distância deve ser comparada com a distância 
                 armazenada, pois outro nó pode ter atualizado com uma distância menor do que a atual"""
                 if self.mem_estabelecidos.ler(endereco_w) == 0:
+                    num_passo3 += 1
                     distancia_vw = distancia_v + custo_vw
                     if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
                         self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
@@ -119,7 +125,8 @@ class DijkstraParallel():
               f"Max Buffer LVV: {max_buffer_lvv}; "
               f"Hit {self.lvv.hit}, "
               f"Miss {self.lvv.miss} "
-              f"Hit/Miss {round(self.lvv.hit/self.lvv.miss, 2)}")
+              f"Hit/Miss {round(self.lvv.hit/self.lvv.miss, 2)} "
+              f"Passo1: {num_passo1}, Passo2: {num_passo2}, Passo3: {num_passo3}, ")
 
         return self.fc.gerar_caminho(fonte, destino, self.mem_anterior)
 
@@ -167,8 +174,8 @@ if __name__ == '__main__':
     teste = False
     grafico = True
     # teste = True
-    grafico = False
-    num_nos = 500
+    # grafico = False
+    num_nos = 33
     inicio = 30
     tem_obstaculo = True
     # tem_obstaculo = False

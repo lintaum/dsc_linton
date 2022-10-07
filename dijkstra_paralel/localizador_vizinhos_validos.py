@@ -43,11 +43,12 @@ class LocalizadorVizinhosValidos():
             relacoes_validas = []
             for relacao, obstaculo, custo in relacoes:
                 if obstaculo == 0:
-                    # Remove os nós estabelecidos
-                    # if self.mem_estabelecidos.ler(relacao) == 0:
+                    """Ignora os nós já estabelecidos, essa verificação prévia refuz pela metade a quantidade de nós a 
+                    serem analisados. No entanto, será necessário realizar essa checagem novamente no passo 3."""
+                    if self.mem_estabelecidos.ler(relacao) == 0:
                         # Verifica se tem obstáculos e não há vizinho válido
-                    if self.get_menor_vizinho(relacao):
-                        relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)])
+                        if self.get_menor_vizinho(relacao):
+                            relacoes_validas.append([relacao, custo, self.get_menor_vizinho(relacao)])
             return relacoes_validas
         else:
             self.buscar_memoria(no)
