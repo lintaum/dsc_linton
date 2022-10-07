@@ -1,0 +1,218 @@
+//==================================================================================================
+//  Filename      : top.v
+//  Created On    : 2022-10-04 09:58:39
+//  Last Modified : 2022-10-07 08:26:49
+//  Revision      : 
+//  Author        : Linton Esteves
+//  Company       : UFBA
+//  Email         : lintonthiago@gmail.com
+//
+//  Description   : 
+//
+//
+//==================================================================================================
+module top
+        #(
+            parameter ADDR_WIDTH = 6,
+            parameter DISTANCIA_WIDTH = 6,
+            parameter CRITERIO_WIDTH = 5,
+            parameter CUSTO_WIDTH = 4,
+            parameter DATA_WIDTH = 8,
+            parameter RELACOES_DATA_WIDTH = 10,
+            parameter NUM_NA = 8
+        )
+        (/*autoport*/
+            input clk,
+            input rst_n,
+            input [ADDR_WIDTH-1:0] top_addr_fonte_in,
+            input [ADDR_WIDTH-1:0] top_addr_destino_in,
+            input top_wr_fonte_in
+        );
+//*******************************************************
+//Internal
+//*******************************************************
+//Local Parameters
+
+//Wires
+//sinais de saida do cme
+wire cme_aguardando,
+     cme_caminho_pronto,
+     cme_iniciar,
+     cme_expandir,
+     cme_construir_caminho;
+
+//sinais de saida do aa
+wire [NUM_NA-1:0] aa_aprovado;
+wire [ADDR_WIDTH*NUM_NA-1:0] aa_endereco;
+wire [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia;
+wire aa_tem_ativo;
+wire aa_tem_aprovado;
+//sinais de saida do lvv
+wire lvv_desativar;
+wire lvv_atualizar;
+wire [ADDR_WIDTH-1:0] lvv_endereco;
+wire [CUSTO_WIDTH-1:0] lvv_menor_vizinho;
+wire [DISTANCIA_WIDTH-1:0] lvv_distancia;
+wire [ADDR_WIDTH-1:0] lvv_anterior;
+wire lvv_relacoes_rd_enable;
+wire [ADDR_WIDTH-1:0] lvv_relacoes_rd_addr;
+wire lvv_obstaculos_rd_enable;
+wire [ADDR_WIDTH-1:0] lvv_obstaculos_rd_addr;
+wire lvv_estabelecidos_write_en;
+wire [DATA_WIDTH-1:0] lvv_estabelecidos_write_data;
+wire [ADDR_WIDTH-1:0] lvv_estabelecidos_write_addr;
+//sinais de saida do gma
+wire [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data;
+wire gma_obstaculos_rd_data;
+
+// sinais de controle do top
+wire [DATA_WIDTH-1:0] endereco_mix;
+wire atualizar_mix;
+wire [CUSTO_WIDTH-1:0] menor_vizinho_mix;
+wire [DISTANCIA_WIDTH-1:0] distancia_mix;
+//Registers
+reg [ADDR_WIDTH-1:0] fonte, destino;
+//*******************************************************
+//General Purpose Signals
+//*******************************************************
+assign atualizar_mix = cme_iniciar ? 1'b1: lvv_atualizar;
+assign endereco_mix = cme_iniciar ? fonte: lvv_endereco;
+assign menor_vizinho_mix = cme_iniciar ? 0: lvv_menor_vizinho;
+assign distancia_mix = cme_iniciar ? 0: lvv_distancia;
+
+// Salvando a fonte e o destino
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        fonte <= {ADDR_WIDTH{1'b0}};
+        destino <= {ADDR_WIDTH{1'b0}};
+    end
+    else begin
+        if (top_wr_fonte_in) begin
+            destino <= top_addr_destino_in;
+            fonte <= top_addr_fonte_in;
+        end
+    end
+end
+
+//*******************************************************
+//Outputs
+//*******************************************************
+
+//*******************************************************
+//Instantiations
+//*******************************************************
+
+gerenciador_estabelecidos
+        #(
+            .ADDR_WIDTH(ADDR_WIDTH)
+        )
+        gerenciador_estabelecidos_u0
+        (/*autoport*/
+            .clk(clk),
+            .rst_n(rst_n),
+            .write_en_in(write_en_in),
+            .write_data_in(write_data_in),
+            .write_addr_in(write_addr_in),
+            .read_en0_in(read_en0_in),
+            .read_en1_in(read_en1_in),
+            .read_addr0_in(read_addr0_in),
+            .read_addr1_in(read_addr1_in),
+            .read_data0_out(ge_read_data0_out),
+            .read_data1_out(ge_read_data1_out)
+        );
+
+gerenciador_memorias_acesso_externo
+        #(
+            .ADDR_WIDTH(ADDR_WIDTH),
+            .RELACOES_DATA_WIDTH(RELACOES_DATA_WIDTH)
+        )
+        gerenciador_memorias_acesso_externo_u0
+        (/*autoport*/
+            .clk(clk),
+            .rst_n(rst_n),
+            .relacoes_rd_enable_in(lvv_relacoes_rd_enable),
+            .relacoes_rd_addr_in(lvv_relacoes_rd_addr),
+            .relacoes_rd_data_out(gma_relacoes_rd_data),
+            .obstaculos_rd_enable_in(lvv_obstaculos_rd_enable),
+            .obstaculos_rd_addr_in(lvv_obstaculos_rd_addr),
+            .obstaculos_rd_data_out(gma_obstaculos_rd_data)
+        );
+
+controlador_maquina_estados
+    controlador_maquina_estados_U0
+        (/*autoport*/
+            .clk(clk),
+            .rst_n(rst_n),
+            .iniciar_in(top_wr_fonte_in),
+            .tem_ativo_in(aa_tem_ativo),
+            .caminho_pronto_in(),
+            .lido_in(),
+            .aguardando_out(cme_aguardando),
+            .caminho_pronto_out(cme_caminho_pronto),
+            .iniciar_out(cme_iniciar),
+            .expandir_out(cme_expandir),
+            .construir_caminho_out(cme_construir_caminho)
+        );
+
+avaliador_ativos
+        #(
+            .NUM_NA(NUM_NA),
+            .ADDR_WIDTH(ADDR_WIDTH),
+            .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
+            .CRITERIO_WIDTH(CRITERIO_WIDTH),
+            .CUSTO_WIDTH(CUSTO_WIDTH)
+        )
+        avaliador_ativos_u0
+        (/*autoport*/
+            .clk(clk),
+            .rst_n(rst_n),
+            .desativar_in(lvv_desativar),
+            .atualizar_in(atualizar_mix),
+            .endereco_in(endereco_mix),
+            .menor_vizinho_in(menor_vizinho_mix),
+            .distancia_in(distancia_mix),
+            .anterior_in(lvv_anterior),
+            .aa_aprovado_out(aa_aprovado),
+            .aa_endereco_out(aa_endereco),
+            .aa_distancia_out(aa_distancia),
+            .aa_tem_aprovado_out(aa_tem_aprovado),
+            .aa_tem_ativo_out(aa_tem_ativo)
+        );
+
+localizador_vizinhos_validos
+        #(
+            .ADDR_WIDTH(ADDR_WIDTH),
+            .RELACOES_DATA_WIDTH(RELACOES_DATA_WIDTH),
+            .NUM_NA(NUM_NA),
+            .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
+            .CUSTO_WIDTH(CUSTO_WIDTH),
+            .DATA_WIDTH(DATA_WIDTH)
+        )
+        localizador_vizinhos_validos_u0
+        (/*autoport*/
+            .clk(clk),
+            .rst_n(rst_n),
+            .aa_aprovado_in(aa_aprovado),
+            .aa_endereco_in(aa_endereco),
+            .aa_distancia_in(aa_distancia),
+            .aa_tem_ativo_in(aa_tem_ativo),
+            .aa_tem_aprovado_in(aa_tem_aprovado),
+            .lvv_desativar_out(lvv_desativar),
+            .lvv_atualizar_out(lvv_atualizar),
+            .lvv_endereco_out(lvv_endereco),
+            .lvv_menor_vizinho_out(lvv_menor_vizinho),
+            .lvv_distancia_out(lvv_distancia),
+            .lvv_anterior_out(lvv_anterior),
+            .lvv_relacoes_rd_enable_out(lvv_relacoes_rd_enable),
+            .lvv_relacoes_rd_addr_out(lvv_relacoes_rd_addr),
+            .gma_relacoes_rd_data_in(gma_relacoes_rd_data),
+            .lvv_obstaculos_rd_enable_out(lvv_obstaculos_rd_enable),
+            .lvv_obstaculos_rd_addr_out(lvv_obstaculos_rd_addr),
+            .gma_obstaculos_rd_data_in(gma_obstaculos_rd_data),
+            .lvv_estabelecidos_write_en_out(lvv_estabelecidos_write_en),
+            .lvv_estabelecidos_write_data_out(lvv_estabelecidos_write_data),
+            .lvv_estabelecidos_write_addr_out(lvv_estabelecidos_write_addr)
+            
+        );
+
+endmodule

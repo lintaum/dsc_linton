@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-10-04 07:12:29
+//  Last Modified : 2022-10-07 07:48:57
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -14,7 +14,7 @@
 module classificar_ativo
 		#(
 			parameter NUM_NA = 8,
-			parameter ADR_WIDTH = 8,
+			parameter ADDR_WIDTH = 8,
             parameter CRITERIO_WIDTH = 5
 		)
 		(/*autoport*/
@@ -34,7 +34,7 @@ module classificar_ativo
 localparam COUNT_WIDTH = 3;
 genvar i;
 //Wires
-wire [ADR_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
+wire [ADDR_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
 //Registers
 reg [COUNT_WIDTH-1:0] count;
 

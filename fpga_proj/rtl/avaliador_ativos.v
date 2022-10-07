@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-09-01 09:20:44
+//  Last Modified : 2022-10-07 08:21:38
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -14,7 +14,7 @@
 module avaliador_ativos
 		#(
       parameter NUM_NA = 4,
-      parameter ADR_WIDTH = 5,
+      parameter ADDR_WIDTH = 5,
       parameter DISTANCIA_WIDTH = 5,
       parameter CRITERIO_WIDTH = 5,
       parameter CUSTO_WIDTH = 4
@@ -24,13 +24,15 @@ module avaliador_ativos
 			input rst_n,
       input desativar_in,
       input atualizar_in,
-      input [ADR_WIDTH-1:0] endereco_in,
+      input [ADDR_WIDTH-1:0] endereco_in,
       input [CUSTO_WIDTH-1:0] menor_vizinho_in,
       input [DISTANCIA_WIDTH-1:0] distancia_in,
-      input [ADR_WIDTH-1:0] anterior_in,
+      input [ADDR_WIDTH-1:0] anterior_in,
       output [NUM_NA-1:0] aa_aprovado_out,
-      output [ADR_WIDTH*NUM_NA-1:0] aa_endereco_out,
-			output [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia_out
+      output [ADDR_WIDTH*NUM_NA-1:0] aa_endereco_out,
+			output [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia_out,
+      output aa_tem_ativo_out,
+      output aa_tem_aprovado_out
 		);
 //*******************************************************
 //Internal
@@ -39,18 +41,18 @@ module avaliador_ativos
 genvar i;
 //Wires
 // no_ativo
-wire [ADR_WIDTH-1:0] na_endereco_2d [NUM_NA-1:0];
+wire [ADDR_WIDTH-1:0] na_endereco_2d [NUM_NA-1:0];
 wire [DISTANCIA_WIDTH-1:0] na_distancia_2d [NUM_NA-1:0];
 wire [NUM_NA-1:0] na_atualizar_anterior;
-wire [ADR_WIDTH-1:0] na_anterior_2d [NUM_NA-1:0];
+wire [ADDR_WIDTH-1:0] na_anterior_2d [NUM_NA-1:0];
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [NUM_NA-1:0];
 wire [CRITERIO_WIDTH*NUM_NA-1:0] na_criterio_1d;
 wire [NUM_NA-1:0] na_ativo;
 wire [NUM_NA-1:0] na_nova_menor_distancia;
 // gerenciador_ativos
-wire [ADR_WIDTH-1:0] ga_endereco;
+wire [ADDR_WIDTH-1:0] ga_endereco;
 wire [NUM_NA-1:0] ga_habilitar;
-wire [ADR_WIDTH-1:0] ga_anterior;
+wire [ADDR_WIDTH-1:0] ga_anterior;
 wire [CUSTO_WIDTH-1:0] ga_menor_vizinho;
 wire [DISTANCIA_WIDTH-1:0] ga_distancia;
 wire ga_atualizar;
@@ -63,13 +65,14 @@ wire ca_pronto;
 wire aa_atualizar_classificacao;
 //Registers
 
+
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
 // convertendo endereco 2d para 1d
 generate
     for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
-        assign aa_endereco_out[ADR_WIDTH*i+ADR_WIDTH-1:ADR_WIDTH*i] = na_endereco_2d[i];
+        assign aa_endereco_out[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i] = na_endereco_2d[i];
         assign na_criterio_1d[CRITERIO_WIDTH*i+CRITERIO_WIDTH-1:CRITERIO_WIDTH*i] = na_criterio_2d[i];
         assign aa_distancia_out[DISTANCIA_WIDTH*i+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH*i] = na_distancia_2d[i];
     end
@@ -84,7 +87,7 @@ endgenerate
 gerenciador_ativos
 	#(
         .NUM_NA(NUM_NA),
-        .ADR_WIDTH(ADR_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
         .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
         .CUSTO_WIDTH(CUSTO_WIDTH)      
     )
@@ -115,7 +118,7 @@ generate
   for (i = 0; i < NUM_NA; i = i + 1) begin:gen_na
     no_ativo
     #(
-      .ADR_WIDTH(ADR_WIDTH),
+      .ADDR_WIDTH(ADDR_WIDTH),
       .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
       .CRITERIO_WIDTH(CRITERIO_WIDTH),
       .CUSTO_WIDTH(CUSTO_WIDTH)      
@@ -144,12 +147,14 @@ generate
   end
 endgenerate
 
+assign aa_tem_ativo_out = |na_ativo;
+assign aa_tem_aprovado_out = |aa_aprovado_out;
 assign aa_atualizar_classificacao = |na_nova_menor_distancia;
 
 classificar_ativo
 		#(
 			.NUM_NA(NUM_NA),
-      .ADR_WIDTH(ADR_WIDTH),
+      .ADDR_WIDTH(ADDR_WIDTH),
       .CRITERIO_WIDTH(CRITERIO_WIDTH)
 		)
 		classificar_ativo_u0

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-09-01 09:15:38
+//  Last Modified : 2022-10-07 07:49:24
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -14,7 +14,7 @@
 module gerenciador_ativos
         #(
             parameter NUM_NA = 8,
-            parameter ADR_WIDTH = 5,
+            parameter ADDR_WIDTH = 5,
             parameter DISTANCIA_WIDTH = 5,
             parameter CUSTO_WIDTH = 4
         )
@@ -23,16 +23,16 @@ module gerenciador_ativos
             input rst_n,
             input desativar_in,
             input atualizar_in,
-            input [ADR_WIDTH-1:0] endereco_in,
-            input [ADR_WIDTH-1:0] anterior_in,
-            input [ADR_WIDTH*NUM_NA-1:0] na_endereco_in,
+            input [ADDR_WIDTH-1:0] endereco_in,
+            input [ADDR_WIDTH-1:0] anterior_in,
+            input [ADDR_WIDTH*NUM_NA-1:0] na_endereco_in,
             input [NUM_NA-1:0] na_ativo_in,
             input [CUSTO_WIDTH-1:0] menor_vizinho_in,
             input [DISTANCIA_WIDTH-1:0] distancia_in,
             output reg ga_desativar_out,
             output reg ga_atualizar_out,
-            output reg [ADR_WIDTH-1:0] ga_anterior_out,
-            output reg [ADR_WIDTH-1:0] ga_endereco_out,
+            output reg [ADDR_WIDTH-1:0] ga_anterior_out,
+            output reg [ADDR_WIDTH-1:0] ga_endereco_out,
             output reg [NUM_NA-1:0] ga_habilitar_out,
             output reg [CUSTO_WIDTH-1:0] ga_menor_vizinho_out,
             output reg [DISTANCIA_WIDTH-1:0] ga_distancia_out,
@@ -54,12 +54,12 @@ localparam COUNT_WIDTH = 3;
 localparam FIDO_ADD_WIDTH = $clog2(NUM_NA);
 //Wires
 genvar i;
-wire [ADR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
+wire [ADDR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
 wire fifo_full;
 wire fifo_almost_full;
 wire fifo_empty;
 wire fifo_almost_empty;
-wire [ADR_WIDTH-1:0] fifo_data_out;
+wire [ADDR_WIDTH-1:0] fifo_data_out;
 wire tem_vazio;
 wire [NUM_NA -1:0] hit;
 wire [NUM_NA -1:0] hit_fifo;
@@ -124,8 +124,8 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         ga_desativar_out <= 1'b0;
         ga_atualizar_out <= 1'b0;
-        ga_endereco_out <= {ADR_WIDTH{1'b0}};
-        ga_anterior_out <= {ADR_WIDTH{1'b0}};
+        ga_endereco_out <= {ADDR_WIDTH{1'b0}};
+        ga_anterior_out <= {ADDR_WIDTH{1'b0}};
         ga_menor_vizinho_out <= {CUSTO_WIDTH{1'b0}};
         ga_distancia_out <= {DISTANCIA_WIDTH{1'b0}};
     end
@@ -205,7 +205,7 @@ endgenerate
 //Convertendo entrada 1d para 2d
 generate
     for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
-        assign na_endereco_2d[i] = na_endereco_in[ADR_WIDTH*i+ADR_WIDTH-1:ADR_WIDTH*i];
+        assign na_endereco_2d[i] = na_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
     end
 endgenerate
 

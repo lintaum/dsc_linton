@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-08-31 11:21:44
+//  Last Modified : 2022-10-07 07:49:07
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -13,7 +13,7 @@
 //==================================================================================================
 module no_ativo
 		#(
-            parameter ADR_WIDTH = 5,
+            parameter ADDR_WIDTH = 5,
             parameter DISTANCIA_WIDTH = 5,
             parameter CRITERIO_WIDTH = 5,
             parameter CUSTO_WIDTH = 4
@@ -24,17 +24,17 @@ module no_ativo
 			input [CUSTO_WIDTH-1:0] menor_vizinho_in,
 			input [DISTANCIA_WIDTH-1:0] distancia_in,
 			input [CRITERIO_WIDTH-1:0] ca_criterio_geral_in,
-			input [ADR_WIDTH-1:0] endereco_in,
-			input [ADR_WIDTH-1:0] anterior_in,
+			input [ADDR_WIDTH-1:0] endereco_in,
+			input [ADDR_WIDTH-1:0] anterior_in,
 			input atualizar_in,
 			input desativar_in,
 			input ga_habilitar_in,
 			output reg [CRITERIO_WIDTH-1:0] na_criterio_out,
 			output reg [DISTANCIA_WIDTH-1:0] na_distancia_out,
 			output reg na_atualizar_anterior_out,
-			output reg [ADR_WIDTH-1:0] na_anterior_out,
+			output reg [ADDR_WIDTH-1:0] na_anterior_out,
 			output reg na_aprovado_out,
-			output reg [ADR_WIDTH-1:0] na_endereco_out,
+			output reg [ADDR_WIDTH-1:0] na_endereco_out,
 			output reg na_ativo_out,
 			output reg na_nova_menor_distancia_out
 
@@ -86,7 +86,7 @@ end
 
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
-		na_endereco_out <= {ADR_WIDTH{1'b0}};
+		na_endereco_out <= {ADDR_WIDTH{1'b0}};
 	end
 	else begin
 		// Momento de ativação
