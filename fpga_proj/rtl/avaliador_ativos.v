@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-07 08:21:38
+//  Last Modified : 2022-10-12 16:27:07
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -32,6 +32,8 @@ module avaliador_ativos
       output [ADDR_WIDTH*NUM_NA-1:0] aa_endereco_out,
 			output [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia_out,
       output aa_tem_ativo_out,
+      output aa_ocupado_out,
+      output aa_pronto_out,
       output aa_tem_aprovado_out
 		);
 //*******************************************************
@@ -57,10 +59,10 @@ wire [CUSTO_WIDTH-1:0] ga_menor_vizinho;
 wire [DISTANCIA_WIDTH-1:0] ga_distancia;
 wire ga_atualizar;
 wire ga_desativar;
-wire ga_ocupado;
+// wire ga_ocupado;
 // classificador_ativos
 wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
-wire ca_pronto;
+// wire ca_pronto;
 // avaliador ativos
 wire aa_atualizar_classificacao;
 //Registers
@@ -109,7 +111,7 @@ gerenciador_ativos
         .ga_desativar_out(ga_desativar),
         .ga_habilitar_out(ga_habilitar),
         .ga_menor_vizinho_out(ga_menor_vizinho),
-        .ga_ocupado_o(ga_ocupado),
+        .ga_ocupado_o(aa_ocupado_out),
         .ga_distancia_out(ga_distancia)
     );
 
@@ -165,6 +167,6 @@ classificar_ativo
       .na_ativo_in(na_ativo),
 			.ca_criterio_geral_out(ca_criterio_geral),
       .aa_atualizar_in(aa_atualizar_classificacao),
-      .ca_pronto_o(ca_pronto)
+      .ca_pronto_o(aa_pronto_out)
 		);
 endmodule

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : controlador_maquina_estados.v
 //  Created On    : 2022-10-06 08:19:57
-//  Last Modified : 2022-10-07 13:48:53
+//  Last Modified : 2022-10-12 17:24:14
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -20,10 +20,11 @@ module controlador_maquina_estados
 			input iniciar_in,
 			input caminho_pronto_in,
 			input lido_in,
+            input lvv_pronto_in,
 			output aguardando_out,
             output caminho_pronto_out,
             output iniciar_out,
-            output expandir_out,
+            output reg expandir_out,
             output tem_ativo_out,
             output construir_caminho_out
 		);
@@ -75,7 +76,7 @@ always @(*) begin
                     next_state = ST_CONSTRUIR_CAMINHO;
             ST_EXPANDIR_ATUALIZAR:
                 // Encontra os vizizinhos de um nó e atualiza no AA
-                if (!tem_aprovado_in)
+                if (lvv_pronto_in)
                     next_state = ST_TEM_ATIVO;
             ST_CONSTRUIR_CAMINHO:
                 if (caminho_pronto_in)
@@ -92,9 +93,18 @@ end
 assign aguardando_out = state == ST_IDLE;
 assign caminho_pronto_out = state == ST_PRONTO;
 assign iniciar_out = state == ST_INICIALIZAR;
-assign expandir_out = state == ST_EXPANDIR_ATUALIZAR;
+// assign expandir_out = state == ST_EXPANDIR_ATUALIZAR;
 assign construir_caminho_out = state == ST_CONSTRUIR_CAMINHO;
 assign tem_ativo_out = state == ST_TEM_ATIVO;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        expandir_out <= 1'b0;
+    end
+    else begin
+        expandir_out = state == ST_EXPANDIR_ATUALIZAR;
+    end
+end
 //*******************************************************
 //Instantiations
 //*******************************************************

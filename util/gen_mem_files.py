@@ -7,7 +7,7 @@ def round_to_bin(data, max_bits):
     return data
 
 
-def dict_2_vmem(dict_mem, obstaculos, max_bits_relacao=10, max_bits_custo=3, nome_arquivo_relacao="../mem_relacoes.bin",
+def dict_2_vmem(dict_mem, obstaculos, max_bits_relacao=10, max_bits_custo=4, nome_arquivo_relacao="../mem_relacoes.bin",
                 nome_arquivo_obstaculo="../mem_obstaculo.bin", max_relacoes=8):
     """Converte uma memória em python para o formato de importação verilog"""
     relacao_str = ''

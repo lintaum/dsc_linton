@@ -188,7 +188,7 @@ def main(num_nos=120, debug=False, grafico=False, num_onstaculos=0):
     # do stuff
     no_inicio = 0
     no_destino = num_nos-1
-    graph_gen = GraphGen(max_weigth=100)
+    graph_gen = GraphGen(max_weigth=15)
     graph_gen.adjacent_lis(nodes=num_nos)
     # graph_gen.plot()
     obstaculos = graph_gen.criar_obstaculos(fonte=no_inicio, destino=no_destino, num=num_onstaculos)

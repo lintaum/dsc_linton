@@ -138,7 +138,7 @@ def main(num_nos=10, debug=False, grafico=False, num_onstaculos=10):
 
     """Gerando o grafo"""
     top = DijkstraParallel(num_nos=num_nos, max_num_vizinhos=6)
-    graph_gen = GraphGen(max_weigth=100)
+    graph_gen = GraphGen(max_weigth=15)
     graph_gen.adjacent_lis(nodes=num_nos)
 
     """Definindo os obstáculos"""

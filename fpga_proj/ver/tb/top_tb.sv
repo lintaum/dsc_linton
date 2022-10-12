@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-07 14:09:21
+//  Last Modified : 2022-10-12 17:00:08
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -23,10 +23,10 @@ localparam ADDR_WIDTH = 10;
 localparam MAX_VIZINHOS = 8;
 localparam DISTANCIA_WIDTH = 6;
 localparam CRITERIO_WIDTH = 5;
-localparam CUSTO_WIDTH = 3;
+localparam CUSTO_WIDTH = 4;
 localparam DATA_WIDTH = 8;
 localparam RELACOES_DATA_WIDTH = MAX_VIZINHOS*(ADDR_WIDTH+CUSTO_WIDTH);
-localparam NUM_NA = 8;
+localparam NUM_NA = 32;
 //Wires
 genvar i;
 logic clk;
@@ -68,7 +68,7 @@ initial begin
   @(posedge rst_n);
 
   repeat(10)@(negedge clk);
-  iniciar(2, 12);
+  iniciar(0, 12);
 
 end
 //*******************************************************
@@ -93,6 +93,7 @@ endtask : iniciar
 //*******************************************************
 top
         #(
+            .MAX_VIZINHOS(MAX_VIZINHOS),
             .ADDR_WIDTH(ADDR_WIDTH),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
             .CRITERIO_WIDTH(CRITERIO_WIDTH),

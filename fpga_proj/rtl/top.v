@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-07 14:18:58
+//  Last Modified : 2022-10-12 16:52:50
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,6 +19,7 @@ module top
             parameter CUSTO_WIDTH = 4,
             parameter DATA_WIDTH = 8,
             parameter RELACOES_DATA_WIDTH = 10,
+            parameter MAX_VIZINHOS = 10,
             parameter NUM_NA = 8
         )
         (/*autoport*/
@@ -52,6 +53,8 @@ wire [ADDR_WIDTH*NUM_NA-1:0] aa_endereco;
 wire [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia;
 wire aa_tem_ativo;
 wire aa_tem_aprovado;
+wire aa_ocupado;
+wire aa_pronto;
 //sinais de saida do lvv
 wire lvv_desativar;
 wire lvv_atualizar;
@@ -64,11 +67,14 @@ wire [ADDR_WIDTH-1:0] lvv_relacoes_rd_addr;
 wire lvv_obstaculos_rd_enable;
 wire [ADDR_WIDTH-1:0] lvv_obstaculos_rd_addr;
 wire lvv_estabelecidos_write_en;
-wire [DATA_WIDTH-1:0] lvv_estabelecidos_write_data;
+wire lvv_estabelecidos_write_data;
 wire [ADDR_WIDTH-1:0] lvv_estabelecidos_write_addr;
+wire lvv_estabelecidos_read_en;
+wire [ADDR_WIDTH-1:0] lvv_estabelecidos_read_addr;
 //sinais de saida do gma
 wire [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data;
 wire gma_obstaculos_rd_data;
+wire lvv_pronto;
 
 // sinais de controle do top
 wire [ADDR_WIDTH-1:0] endereco_mix;
@@ -115,13 +121,13 @@ gerenciador_estabelecidos
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
-            .write_en_in(write_en_in),
-            .write_data_in(write_data_in),
-            .write_addr_in(write_addr_in),
-            .read_en0_in(read_en0_in),
-            .read_en1_in(read_en1_in),
-            .read_addr0_in(read_addr0_in),
-            .read_addr1_in(read_addr1_in),
+            .write_en_in(lvv_estabelecidos_write_en),
+            .write_data_in(lvv_estabelecidos_write_data),
+            .write_addr_in(lvv_estabelecidos_write_addr),
+            .read_en0_in(lvv_estabelecidos_read_en),
+            .read_en1_in(),
+            .read_addr0_in(lvv_estabelecidos_read_addr),
+            .read_addr1_in(),
             .read_data0_out(ge_read_data0_out),
             .read_data1_out(ge_read_data1_out)
         );
@@ -150,6 +156,7 @@ controlador_maquina_estados
             .rst_n(rst_n),
             .iniciar_in(top_wr_fonte_in),
             .tem_ativo_in(aa_tem_ativo),
+            .lvv_pronto_in(lvv_pronto),
             .caminho_pronto_in(),
             .lido_in(),
             .aguardando_out(cme_aguardando),
@@ -182,6 +189,8 @@ avaliador_ativos
             .aa_endereco_out(aa_endereco),
             .aa_distancia_out(aa_distancia),
             .aa_tem_aprovado_out(aa_tem_aprovado),
+            .aa_ocupado_out(aa_ocupado),
+            .aa_pronto_out(aa_pronto),
             .aa_tem_ativo_out(aa_tem_ativo)
         );
 
@@ -201,6 +210,7 @@ buffer
 localizador_vizinhos_validos
         #(
             .ADDR_WIDTH(ADDR_WIDTH),
+            .MAX_VIZINHOS(MAX_VIZINHOS),
             .RELACOES_DATA_WIDTH(RELACOES_DATA_WIDTH),
             .NUM_NA(NUM_NA),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
@@ -212,11 +222,12 @@ localizador_vizinhos_validos
             .clk(clk),
             .rst_n(rst_n),
             .cme_expandir_in(cme_expandir),
+            .aa_ocupado_in(aa_ocupado),
             .aa_aprovado_in(buff_aa_aprovado),
             .aa_endereco_in(buff_aa_endereco),
             .aa_distancia_in(buff_aa_distancia),
-            .aa_tem_ativo_in(aa_tem_ativo),
-            .aa_tem_aprovado_in(aa_tem_aprovado),
+            // .aa_tem_ativo_in(aa_tem_ativo),
+            // .aa_tem_aprovado_in(aa_tem_aprovado),
             .lvv_desativar_out(lvv_desativar),
             .lvv_atualizar_out(lvv_atualizar),
             .lvv_endereco_out(lvv_endereco),
@@ -231,7 +242,11 @@ localizador_vizinhos_validos
             .gma_obstaculos_rd_data_in(gma_obstaculos_rd_data),
             .lvv_estabelecidos_write_en_out(lvv_estabelecidos_write_en),
             .lvv_estabelecidos_write_data_out(lvv_estabelecidos_write_data),
-            .lvv_estabelecidos_write_addr_out(lvv_estabelecidos_write_addr)
+            .lvv_estabelecidos_write_addr_out(lvv_estabelecidos_write_addr),
+            .lvv_estabelecidos_read_en_out(lvv_estabelecidos_read_en),
+            .lvv_estabelecidos_read_addr_out(lvv_estabelecidos_read_addr),
+            .ge_estabelecidos_read_data_in(ge_read_data0_out),
+            .lvv_pronto_out(lvv_pronto)
             
         );
 
