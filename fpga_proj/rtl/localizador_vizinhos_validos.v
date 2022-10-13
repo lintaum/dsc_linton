@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-12 17:14:24
+//  Last Modified : 2022-10-13 14:16:15
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -31,8 +31,10 @@ module localizador_vizinhos_validos
 			input clk,
 			input rst_n,
 			input aa_ocupado_in,
+			input aa_pronto_in,
 			input [NUM_NA-1:0] aa_aprovado_in,
       		input [ADDR_WIDTH*NUM_NA-1:0] aa_endereco_in,
+      		input [ADDR_WIDTH*NUM_NA-1:0] aa_anterior_data_in,
 			input [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia_in,
       		// input aa_tem_ativo_in,
       		// input aa_tem_aprovado_in,
@@ -61,6 +63,8 @@ module localizador_vizinhos_validos
 			output reg lvv_estabelecidos_read_en_out,
 			output reg [ADDR_WIDTH-1:0] lvv_estabelecidos_read_addr_out,
 			input ge_estabelecidos_read_data_in,
+			// Atualizando anterior
+			output reg [ADDR_WIDTH-1:0] lvv_anterior_data_out,
 			// Indicando que o processamento atual termninou
 			output lvv_pronto_out
 			
@@ -74,8 +78,10 @@ localparam COUNT_WIDTH = 10;
 // endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v
 localparam FIFO_DATA_WIDTH = ADDR_WIDTH + CUSTO_WIDTH + ADDR_WIDTH + DISTANCIA_WIDTH;
 localparam FIDO_ADDR_WIDTH = 5;
+localparam COUNT_VIZINHO_WIDTH = 3;
 //Wires
 wire [ADDR_WIDTH-1:0] aa_endereco_2d [0:NUM_NA-1];
+wire [ADDR_WIDTH-1:0] aa_anterior_data_2d [0:NUM_NA-1];
 wire [DISTANCIA_WIDTH-1:0] aa_distancia_2d [0:NUM_NA-1];
 // sinais da fifo de saída
 wire fifo_full;
@@ -84,14 +90,34 @@ wire fifo_empty;
 wire fifo_almost_empty;
 // wire ler_fifo;
 wire [FIFO_DATA_WIDTH-1:0] fifo_data_out;
+wire salvar_menor;
+wire no_aprovado;
+wire vizinho_invalido;
+wire vizinho_invalido_in;
+wire [ADDR_WIDTH-1:0] endereco_vizinho_atual;
 //Registers
 reg [FIFO_DATA_WIDTH-1:0] fifo_data_in;
 reg [COUNT_WIDTH-1:0] count_aprovados;
 reg [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data_ap;
 reg [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data_reg;
+reg [COUNT_VIZINHO_WIDTH-1:0] count_vizinho;
+reg [STATE_WIDTH-1:0] state, next_state;
+reg [COUNT_VIZINHO_WIDTH-1:0] count_sub_vizinho;
+reg [ADDR_WIDTH-1:0] endereco_w;
+reg [CUSTO_WIDTH-1:0]custo_vw;
+reg [CUSTO_WIDTH-1:0] menor_vizinho;
+reg [ADDR_WIDTH-1:0] aprovado;
+reg [DISTANCIA_WIDTH-1:0] distancia_v;
+reg [DISTANCIA_WIDTH-1:0] nova_distancia;
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
+assign endereco_vizinho_atual = relacoes_2d_addr_ap[count_vizinho];
+assign salvar_menor = state == ST_SALVAR_MENOR;
+assign no_aprovado = aa_aprovado_in[count_aprovados] == 1'b1;
+assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
+assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
+assign lvv_pronto_out = state == ST_FINALIZAR && (fifo_empty && !aa_ocupado_in);
 
 //*******************************************************
 // Desempacotando leitura de relações de um no
@@ -130,23 +156,20 @@ endgenerate
 //*******************************************************
 // Estabelecendo os nós aprovados e desativando no AA
 //*******************************************************
-
-
-
-// assign  lvv_relacoes_rd_enable_out = lvv_estabelecidos_write_en_out;
-// assign  lvv_relacoes_rd_addr_out = lvv_estabelecidos_write_addr_out;
-
 always @(*) begin
+	
 	lvv_estabelecidos_write_en_out = 1'b0;
+	lvv_estabelecidos_read_en_out = 1'b0;
 	lvv_estabelecidos_write_data_out = 1'b0;
-	lvv_estabelecidos_write_addr_out = aa_endereco_2d[count_aprovados];	
+	lvv_anterior_data_out = aa_anterior_data_2d[count_aprovados];
+	lvv_estabelecidos_write_addr_out = aa_endereco_2d[count_aprovados];
+	lvv_estabelecidos_read_addr_out = fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH+ADDR_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH];
 	if (state == ST_ENCONTRAR_VIZINHOS) begin
 		lvv_estabelecidos_write_en_out = 1'b1;
 		lvv_estabelecidos_write_data_out = 1'b1;
 	end
 	if (state == ST_FINALIZAR) begin
 		lvv_estabelecidos_read_en_out = 1'b1;
-		lvv_estabelecidos_read_addr_out = fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH+ADDR_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH];
 	end
 end
 
@@ -215,9 +238,6 @@ always @(posedge clk or negedge rst_n) begin
    end
 end
 
-localparam COUNT_VIZINHO_WIDTH = 3;
-reg [COUNT_VIZINHO_WIDTH-1:0] count_vizinho;
-
 always @(posedge clk or negedge rst_n) begin
    if (!rst_n) begin
       count_vizinho <= {COUNT_VIZINHO_WIDTH{1'b0}};
@@ -230,9 +250,6 @@ always @(posedge clk or negedge rst_n) begin
       end
    end
 end
-
-
-reg [COUNT_VIZINHO_WIDTH-1:0] count_sub_vizinho;
 
 always @(posedge clk or negedge rst_n) begin
    if (!rst_n) begin
@@ -251,9 +268,6 @@ end
 //FSM
 //*******************************************************
 
-
-reg [STATE_WIDTH-1:0] state, next_state;
-
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         state <= ST_IDLE;
@@ -262,19 +276,6 @@ always @(posedge clk or negedge rst_n) begin
         state <= next_state;
     end
 end
-
-
-wire salvar_menor;
-wire no_aprovado;
-wire vizinho_invalido;
-wire vizinho_invalido_in;
-wire [ADDR_WIDTH-1:0] endereco_vizinho_atual;
-assign endereco_vizinho_atual = relacoes_2d_addr_ap[count_vizinho];
-assign salvar_menor = state == ST_SALVAR_MENOR;
-assign no_aprovado = aa_aprovado_in[count_aprovados] == 1'b1;
-assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
-assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
-assign lvv_pronto_out = state == ST_IDLE;
 
 localparam STATE_WIDTH = 3;
 localparam ST_IDLE = 0,
@@ -290,7 +291,7 @@ always @(*) begin
     next_state = state;
     case (state)
         ST_IDLE:
-            if (cme_expandir_in)
+            if (cme_expandir_in && !lvv_pronto_out && aa_pronto_in)
                 next_state = ST_ENCONTRAR_APROVADO;
         // Identificando um nó aprovado a ser analizado
         ST_ENCONTRAR_APROVADO:
@@ -334,6 +335,7 @@ end
 generate
     for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
 		assign aa_endereco_2d[i] = aa_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
+		assign aa_anterior_data_2d[i] = aa_anterior_data_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
 		assign aa_distancia_2d[i] = aa_distancia_in[DISTANCIA_WIDTH*i+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH*i];
     end
 endgenerate
@@ -341,12 +343,6 @@ endgenerate
 //*******************************************************
 //Salvando menor vizinho
 //*******************************************************
-reg [ADDR_WIDTH-1:0] endereco_w;
-reg [CUSTO_WIDTH-1:0]custo_vw;
-reg [CUSTO_WIDTH-1:0] menor_vizinho;
-reg [ADDR_WIDTH-1:0] aprovado;
-reg [DISTANCIA_WIDTH-1:0] distancia_v;
-reg [DISTANCIA_WIDTH-1:0] nova_distancia;
 always @(*) begin
 	// endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v
 	endereco_w = salvar_menor ? relacoes_2d_addr_ap[count_vizinho] : 0;
@@ -372,17 +368,36 @@ always @(posedge clk or negedge rst_n) begin
 		lvv_distancia_out <= {DISTANCIA_WIDTH{1'b0}};
 	end
 	else begin
+		fifo_read_en <= 1'b0;
 		if (state == ST_ENCONTRAR_VIZINHOS) begin
+			lvv_atualizar_out <= 1'b0;
 			lvv_desativar_out <= lvv_estabelecidos_write_en_out;
 			lvv_desativar_addr_out <= lvv_estabelecidos_write_addr_out;
 			lvv_endereco_out <= lvv_estabelecidos_write_addr_out;
 		end
-		else if (!fifo_empty && lvv_atualizar_out != 1'b1 && !aa_ocupado_in && state == ST_FINALIZAR && !ge_estabelecidos_read_data_in) begin
-			lvv_atualizar_out <= 1'b1;
+		else if (state == ST_FINALIZAR) begin
 			lvv_endereco_out <= fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH+ADDR_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH];
 			lvv_menor_vizinho_out <= fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH];
 			lvv_anterior_out <= fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH];;
 			lvv_distancia_out <= fifo_data_out[DISTANCIA_WIDTH-1:0];
+			if (!fifo_empty && lvv_atualizar_out != 1'b1 && !aa_ocupado_in) begin
+				if (!ge_estabelecidos_read_data_in) begin
+					lvv_atualizar_out <= 1'b1;
+					lvv_desativar_out <= 1'b0;
+					fifo_read_en <= 1'b1;
+				end
+				else begin
+					if (!fifo_read_en)
+						fifo_read_en <= 1'b1;
+					else
+						fifo_read_en <= 1'b0;
+					lvv_atualizar_out <= 1'b0;
+				end
+			end
+			else begin
+				fifo_read_en <= 1'b0;
+				lvv_atualizar_out <= 1'b0;
+			end
 		end
 		else begin
 			lvv_atualizar_out <= 1'b0;
@@ -390,10 +405,20 @@ always @(posedge clk or negedge rst_n) begin
 		end
 	end
 end
+
+wire [ADDR_WIDTH-1:0] fifo_endereco_out;
+wire [ADDR_WIDTH-1:0] fifo_anterior_out;
+wire [CUSTO_WIDTH-1:0] fifo_menor_vizinho_out;
+wire [DISTANCIA_WIDTH-1:0] fifo_distancia_out;
+
+assign fifo_endereco_out = fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH+ADDR_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH];
+assign fifo_menor_vizinho_out = fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH];
+assign fifo_anterior_out = fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH];;
+assign fifo_distancia_out = fifo_data_out[DISTANCIA_WIDTH-1:0];
 //*******************************************************
 //Instantiations
 //*******************************************************
-
+reg fifo_read_en;
 syn_fifo 
 #(
     .DATA_WIDTH(FIFO_DATA_WIDTH),
@@ -403,7 +428,7 @@ fifo_saida
   (
     .clk(clk),
     .rst_n(rst_n),
-    .rd_en(lvv_atualizar_out),
+    .rd_en(fifo_read_en),
     .wr_en(salvar_menor),
     .data_in(fifo_data_in),
     .full(fifo_full),

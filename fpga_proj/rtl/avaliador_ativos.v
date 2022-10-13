@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-12 16:27:07
+//  Last Modified : 2022-10-13 14:08:12
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -16,7 +16,7 @@ module avaliador_ativos
       parameter NUM_NA = 4,
       parameter ADDR_WIDTH = 5,
       parameter DISTANCIA_WIDTH = 5,
-      parameter CRITERIO_WIDTH = 5,
+      parameter CRITERIO_WIDTH = DISTANCIA_WIDTH + 1,
       parameter CUSTO_WIDTH = 4
 		)
 		(/*autoport*/
@@ -34,7 +34,9 @@ module avaliador_ativos
       output aa_tem_ativo_out,
       output aa_ocupado_out,
       output aa_pronto_out,
-      output aa_tem_aprovado_out
+      output aa_tem_aprovado_out,
+      // Atualizar memória de anterior
+      output [ADDR_WIDTH*NUM_NA-1:0] aa_anterior_data_out
 		);
 //*******************************************************
 //Internal
@@ -77,6 +79,7 @@ generate
         assign aa_endereco_out[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i] = na_endereco_2d[i];
         assign na_criterio_1d[CRITERIO_WIDTH*i+CRITERIO_WIDTH-1:CRITERIO_WIDTH*i] = na_criterio_2d[i];
         assign aa_distancia_out[DISTANCIA_WIDTH*i+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH*i] = na_distancia_2d[i];
+        assign aa_anterior_data_out[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i] = na_anterior_2d[i];
     end
 endgenerate
 //*******************************************************

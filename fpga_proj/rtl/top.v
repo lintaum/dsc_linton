@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-12 16:52:50
+//  Last Modified : 2022-10-13 14:39:03
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -15,7 +15,7 @@ module top
         #(
             parameter ADDR_WIDTH = 6,
             parameter DISTANCIA_WIDTH = 6,
-            parameter CRITERIO_WIDTH = 5,
+            parameter CRITERIO_WIDTH = DISTANCIA_WIDTH + 1,
             parameter CUSTO_WIDTH = 4,
             parameter DATA_WIDTH = 8,
             parameter RELACOES_DATA_WIDTH = 10,
@@ -51,6 +51,7 @@ wire [DISTANCIA_WIDTH*NUM_NA-1:0] buff_aa_distancia;
 wire [NUM_NA-1:0] aa_aprovado;
 wire [ADDR_WIDTH*NUM_NA-1:0] aa_endereco;
 wire [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia;
+wire [ADDR_WIDTH*NUM_NA-1:0] aa_anterior_data;
 wire aa_tem_ativo;
 wire aa_tem_aprovado;
 wire aa_ocupado;
@@ -58,6 +59,7 @@ wire aa_pronto;
 //sinais de saida do lvv
 wire lvv_desativar;
 wire lvv_atualizar;
+wire [ADDR_WIDTH-1:0] lvv_anterior_data;
 wire [ADDR_WIDTH-1:0] lvv_endereco;
 wire [CUSTO_WIDTH-1:0] lvv_menor_vizinho;
 wire [DISTANCIA_WIDTH-1:0] lvv_distancia;
@@ -113,6 +115,25 @@ end
 //Instantiations
 //*******************************************************
 
+gerenciador_memoria_anterior
+        #(
+            .ADDR_WIDTH(ADDR_WIDTH)
+        )
+        gerenciador_memoria_anterior_u0
+        (/*autoport*/
+            .clk(clk),
+            .rst_n(rst_n),
+            .top_fonte_in(fonte),
+            .top_destino_in(destino),
+            .cme_construir_caminho_in(cme_construir_caminho),
+            .write_en_in(lvv_estabelecidos_write_en),
+            .write_data_in(lvv_anterior_data),
+            .write_addr_in(lvv_estabelecidos_write_addr),
+            // .read_en_in(),
+            // .read_addr_in(),
+            .read_data_out()
+        );
+
 gerenciador_estabelecidos
         #(
             .ADDR_WIDTH(ADDR_WIDTH)
@@ -157,6 +178,8 @@ controlador_maquina_estados
             .iniciar_in(top_wr_fonte_in),
             .tem_ativo_in(aa_tem_ativo),
             .lvv_pronto_in(lvv_pronto),
+            .aa_pronto_in(aa_pronto),
+            .aa_ocupado_in(aa_ocupado),
             .caminho_pronto_in(),
             .lido_in(),
             .aguardando_out(cme_aguardando),
@@ -191,6 +214,7 @@ avaliador_ativos
             .aa_tem_aprovado_out(aa_tem_aprovado),
             .aa_ocupado_out(aa_ocupado),
             .aa_pronto_out(aa_pronto),
+            .aa_anterior_data_out(aa_anterior_data),
             .aa_tem_ativo_out(aa_tem_ativo)
         );
 
@@ -222,7 +246,9 @@ localizador_vizinhos_validos
             .clk(clk),
             .rst_n(rst_n),
             .cme_expandir_in(cme_expandir),
+            .aa_pronto_in(aa_pronto),
             .aa_ocupado_in(aa_ocupado),
+            .aa_anterior_data_in(aa_anterior_data),
             .aa_aprovado_in(buff_aa_aprovado),
             .aa_endereco_in(buff_aa_endereco),
             .aa_distancia_in(buff_aa_distancia),
@@ -246,6 +272,7 @@ localizador_vizinhos_validos
             .lvv_estabelecidos_read_en_out(lvv_estabelecidos_read_en),
             .lvv_estabelecidos_read_addr_out(lvv_estabelecidos_read_addr),
             .ge_estabelecidos_read_data_in(ge_read_data0_out),
+            .lvv_anterior_data_out(lvv_anterior_data),
             .lvv_pronto_out(lvv_pronto)
             
         );

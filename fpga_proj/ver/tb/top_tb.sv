@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-12 17:00:08
+//  Last Modified : 2022-10-13 14:44:36
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,10 +19,11 @@ module top_tb
 //Internal
 //*******************************************************
 //Local Parameters
+// localparam NUM_NOS = 64
 localparam ADDR_WIDTH = 10;
 localparam MAX_VIZINHOS = 8;
 localparam DISTANCIA_WIDTH = 6;
-localparam CRITERIO_WIDTH = 5;
+localparam CRITERIO_WIDTH = DISTANCIA_WIDTH + 1;
 localparam CUSTO_WIDTH = 4;
 localparam DATA_WIDTH = 8;
 localparam RELACOES_DATA_WIDTH = MAX_VIZINHOS*(ADDR_WIDTH+CUSTO_WIDTH);
@@ -68,7 +69,7 @@ initial begin
   @(posedge rst_n);
 
   repeat(10)@(negedge clk);
-  iniciar(0, 12);
+  iniciar(0, 31);
 
 end
 //*******************************************************
