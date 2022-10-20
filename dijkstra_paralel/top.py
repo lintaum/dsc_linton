@@ -8,7 +8,8 @@ from dijkstra.dijkstra_crauser import main as main_crauser
 from crauser.random_graph import GraphGen
 import warnings
 
-from util.gen_mem_files import dict_2_vmem
+from util.gen_mem_files import dict_2_vmem, salvar_param_sim
+from util.simular_vivado import simular_vivado
 
 inf = float('inf')
 
@@ -68,6 +69,7 @@ class DijkstraParallel():
             """Passo 1 - Identificando aprovados"""
             buffer00 = []
             aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
+            # print(f"Aprovados: {aprovados_distancia}")
             for aprovado, distancia_v in aprovados_distancia:
                 num_passo1 += 1
                 """salvando no buffer de saida"""
@@ -154,6 +156,14 @@ def main(num_nos=10, debug=False, grafico=False, num_onstaculos=10):
     custo = graph_gen.graph.get_custo_caminho(menor_caminho)
     if grafico:
         graph_gen.plot_path_obstaculo(menor_caminho, (lista_obstaculos_plot(top.mem_obstaculos)))
+
+    salvar_param_sim(
+                         fonte=fonte,
+                         destino=destino,
+                         menor_caminho=menor_caminho,
+                         custo=custo, max_bits_relacao=10,
+                         max_ativos=top.avaliador_ativos.max_ocupacao
+                     )
     return menor_caminho, custo
 
 
@@ -173,12 +183,13 @@ def lista_obstaculos_plot(obstaculos):
 if __name__ == '__main__':
     teste = False
     grafico = True
-    # teste = True
-    # grafico = False
-    num_nos = 33
-    inicio = 30
+    teste = True
+    # grafico+ = False
+    num_nos = 128
+    inicio = 11
     tem_obstaculo = True
     # tem_obstaculo = False
+    debug = True
 
     if not teste:
         inicio = num_nos - 1
@@ -188,7 +199,7 @@ if __name__ == '__main__':
         if tem_obstaculo:
             num_onstaculos = idx/4
             # num_onstaculos = 0
-        caminho, custo = main(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
+        caminho, custo = main(num_nos=idx, debug=debug, grafico=False, num_onstaculos=num_onstaculos)
         caminho2, custo2 = main_sequencial(num_nos=idx, debug=False, grafico=grafico, num_onstaculos=num_onstaculos)
 
         # print(f"Num de nós {idx}")
@@ -204,4 +215,15 @@ if __name__ == '__main__':
 
         else:
             print(f"Passou {idx}!")
+        # Verificando se é possível chegar na fonte a partir do destino
+        if len(caminho) > 1:
+            if not simular_vivado():
+                print(f"Referência {caminho2, custo2}")
+                print(f"Referência {caminho, custo}")
+                warnings.warn(f"Foram encontrados erros na simulação: num de nós {idx}")
+                break
+            else:
+                print(f"Passou na Simulação {idx}!")
+        else:
+            print(f"Não é possível chegar na fonte {idx}!")
     # print(f"Passou Tudo!")

@@ -1,15 +1,16 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-07 14:14:22
+//  Last Modified : 2022-10-20 12:12:23
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
 //  Email         : lintonthiago@gmail.com
 //
 //  Description   : 
-//
-//
+//  1) A fifo é inicializada com todos os espaços vazios
+//  2) O avaliador de ativos solicita a leitura do próximo espaço vazio, então é realizada uma leitura da fifo
+//  3) Quando um nó é desativado, sua posição é liberada e armazenada na fifo
 //==================================================================================================
 module gerenciador_ativos
         #(
@@ -74,7 +75,7 @@ reg [NUM_NA-1:0] fifo_data_in;
 //*******************************************************
 //Flag signals
 //*******************************************************
-assign ga_buffers_cheios_o = tem_vazio;
+assign ga_buffers_cheios_o = fifo_empty;
 assign ga_ocupado_o = state != ST_IDLE;
 assign tem_vazio = !fifo_empty;
 assign tem_hit = |hit;
@@ -140,23 +141,38 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
-
+wire achou_desocupado;
+assign achou_desocupado = na_ativo_in[count] == 1'b0;
 //*******************************************************
 //Identificando NA vazios
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        fifo_data_in <= {NUM_NA{1'b0}};
-        escrever_fifo <= 1'b0;
+        fifo_data_in <= 1;
+        // escrever_fifo <= 1'b0;
     end
     else begin
-        if (na_ativo_in[count] == 1'b0 && !fifo_almost_full && !fifo_full) begin
-            fifo_data_in <= count;
+        if (init)
+            fifo_data_in <= 1 << count;
+        else
+            fifo_data_in <= hit;
+    end
+end
+
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        escrever_fifo <= 1'b0;
+    end
+    if (init && !fifo_almost_full)
+        escrever_fifo <= 1'b1;
+    else if (state == ST_ENCONTROU) begin
+        if (ga_desativar_out)
             escrever_fifo <= 1'b1;
-        end
-        else begin
-            escrever_fifo <= 1'b0;
-        end
+
+    end
+    else begin
+        escrever_fifo <= 1'b0;
     end
 end
 
@@ -174,14 +190,27 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+reg liberar_escita_fifo;
+reg init;
+
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        count <= {NUM_NA{1'b0}};
+        init <= 1'b1;
     end
     else begin
-        if (!fifo_almost_full && !fifo_full) begin
-            if (count == NUM_NA-1)
-                count <= {NUM_NA{1'b0}};
+        if (count == NUM_NA)
+            init <= 1'b0;
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        count <= 1;
+    end
+    else begin
+        if (init) begin
+            if (count == NUM_NA)
+                count <= 1;
             else
                 count <= count + 1'b1;
         end
@@ -190,14 +219,17 @@ end
 
 //*******************************************************
 //General Purpose Signals
+// Verificando se o endereço se encontra armazenado e ativo, só pode existir um endereço por nó.
+// O hit verifica se o endereço recebido está armazenado em um nó ativo.
+// 
+// hit_fifo habilita o sinal correspondente ao valor de saída da fifo
+// 
+// 
 //*******************************************************
-//Verificando se o endereço se encontra armazenado e ativo, 
-//só pode existir um endereço por nó
-// always @(*) begin
 generate
     for (i = 0; i < NUM_NA; i = i + 1)begin
         assign hit[i] = ((na_endereco_2d[i] == ga_endereco_out) && na_ativo_in[i]) ? 1'b1: 1'b0;
-        assign hit_fifo[i] = fifo_data_out == i ? 1'b1: 1'b0;
+        // assign hit_fifo[i] = fifo_data_out == i ? 1'b1: 1'b0;
     end
 endgenerate
 // end
@@ -220,7 +252,7 @@ always @(posedge clk or negedge rst_n) begin
         if (tem_hit)
             ga_habilitar_out <= hit;
         else
-            ga_habilitar_out <= hit_fifo;
+            ga_habilitar_out <= fifo_data_out;
     end
     else
         ga_habilitar_out <= {NUM_NA{1'b0}};
@@ -233,7 +265,8 @@ end
 syn_fifo 
 #(
     .DATA_WIDTH(NUM_NA),
-    .ADDR_WIDTH(FIDO_ADD_WIDTH)
+    .ADDR_WIDTH(FIDO_ADD_WIDTH),
+    .RAM_DEPTH(NUM_NA)
   )
 fifo_vazios
   (

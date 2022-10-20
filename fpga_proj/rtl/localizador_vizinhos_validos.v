@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-13 14:16:15
+//  Last Modified : 2022-10-19 11:01:48
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,19 +19,20 @@
 //==================================================================================================
 module localizador_vizinhos_validos
 		#(
-			ADDR_WIDTH = 8,
-			MAX_VIZINHOS = 8,
-			RELACOES_DATA_WIDTH = 8,
-			NUM_NA = 4,
-	        DISTANCIA_WIDTH = 5,
-	        CUSTO_WIDTH = 4,
-	        DATA_WIDTH = 4
+			parameter ADDR_WIDTH = 10,
+	        parameter DISTANCIA_WIDTH = 6,
+			parameter MAX_VIZINHOS = 8,
+			parameter NUM_NA = 4,
+	        parameter CUSTO_WIDTH = 4,
+	        parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
+			parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
+	        parameter DATA_WIDTH = 4
 		)
 		(/*autoport*/
 			input clk,
 			input rst_n,
 			input aa_ocupado_in,
-			input aa_pronto_in,
+			// input aa_pronto_in,
 			input [NUM_NA-1:0] aa_aprovado_in,
       		input [ADDR_WIDTH*NUM_NA-1:0] aa_endereco_in,
       		input [ADDR_WIDTH*NUM_NA-1:0] aa_anterior_data_in,
@@ -77,7 +78,7 @@ genvar i;
 localparam COUNT_WIDTH = 10;
 // endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v
 localparam FIFO_DATA_WIDTH = ADDR_WIDTH + CUSTO_WIDTH + ADDR_WIDTH + DISTANCIA_WIDTH;
-localparam FIDO_ADDR_WIDTH = 5;
+localparam FIDO_ADDR_WIDTH = 8;
 localparam COUNT_VIZINHO_WIDTH = 3;
 //Wires
 wire [ADDR_WIDTH-1:0] aa_endereco_2d [0:NUM_NA-1];
@@ -119,10 +120,19 @@ assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
 assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
 assign lvv_pronto_out = state == ST_FINALIZAR && (fifo_empty && !aa_ocupado_in);
 
+reg lvv_pronto_reg;
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		lvv_pronto_reg <= 1'b0;
+	end
+	else begin
+		lvv_pronto_reg <= lvv_pronto_out;
+	end
+end
 //*******************************************************
 // Desempacotando leitura de relações de um no
 //*******************************************************
-localparam UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH;
+
 wire [UMA_RELACAO_WIDTH-1:0] relacoes_2d_ap [0:MAX_VIZINHOS-1];
 wire [CUSTO_WIDTH-1:0] relacoes_2d_custo_ap [0:MAX_VIZINHOS-1];
 wire [ADDR_WIDTH-1:0] relacoes_2d_addr_ap [0:MAX_VIZINHOS-1];
@@ -137,19 +147,28 @@ wire [ADDR_WIDTH-1:0] relacoes_2d_addr_reg [0:MAX_VIZINHOS-1];
 
 generate
     for (i = 0; i < MAX_VIZINHOS; i = i + 1) begin:convert_dimension_relacao
-		assign relacoes_2d_ap[i] = gma_relacoes_rd_data_ap[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
+		assign relacoes_2d_ap[MAX_VIZINHOS-1-i] = gma_relacoes_rd_data_ap[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
 		assign relacoes_2d_custo_ap[i] = relacoes_2d_ap[i][CUSTO_WIDTH-1:0];
 		assign relacoes_2d_addr_ap[i] = relacoes_2d_ap[i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
 
-		assign relacoes_2d_in[i] = gma_relacoes_rd_data_in[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
+		assign relacoes_2d_in[MAX_VIZINHOS-1-i] = gma_relacoes_rd_data_in[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
 		assign relacoes_2d_custo_in[i] = relacoes_2d_in[i][CUSTO_WIDTH-1:0];
 		assign relacoes_2d_addr_in[i] = relacoes_2d_in[i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
 
-		assign relacoes_2d_reg[i] = gma_relacoes_rd_data_reg[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
+		assign relacoes_2d_reg[MAX_VIZINHOS-1-i] = gma_relacoes_rd_data_reg[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
 		assign relacoes_2d_custo_reg[i] = relacoes_2d_reg[i][CUSTO_WIDTH-1:0];
 		assign relacoes_2d_addr_reg[i] = relacoes_2d_reg[i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
-		
-		// assign relacoes_2d_in[i] = gma_relacoes_rd_data_reg[UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
+    end
+endgenerate
+
+//*******************************************************
+// Convertendo entradas para 2d
+//*******************************************************
+generate
+    for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
+		assign aa_endereco_2d[i] = aa_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
+		assign aa_anterior_data_2d[i] = aa_anterior_data_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
+		assign aa_distancia_2d[i] = aa_distancia_in[DISTANCIA_WIDTH*i+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH*i];
     end
 endgenerate
 
@@ -267,16 +286,6 @@ end
 //*******************************************************
 //FSM
 //*******************************************************
-
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        state <= ST_IDLE;
-    end
-    else begin
-        state <= next_state;
-    end
-end
-
 localparam STATE_WIDTH = 3;
 localparam ST_IDLE = 0,
 		   ST_ENCONTRAR_APROVADO = 1,
@@ -287,11 +296,21 @@ localparam ST_IDLE = 0,
 		   ST_EXPANDIR_VIZINHOS = 6,
 		   ST_FINALIZAR = 7;
 
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        state <= ST_IDLE;
+    end
+    else begin
+        state <= next_state;
+    end
+end
+
 always @(*) begin
     next_state = state;
     case (state)
         ST_IDLE:
-            if (cme_expandir_in && !lvv_pronto_out && aa_pronto_in)
+            // if (cme_expandir_in && !lvv_pronto_out && aa_pronto_in)
+            if (cme_expandir_in && !lvv_pronto_out && !lvv_pronto_reg)
                 next_state = ST_ENCONTRAR_APROVADO;
         // Identificando um nó aprovado a ser analizado
         ST_ENCONTRAR_APROVADO:
@@ -312,33 +331,29 @@ always @(*) begin
             	next_state = ST_ENCONTRAR_MENOR;
         // Entre os vizinhos do vizinho, encontrando aquele que possui o menor custo
         ST_ENCONTRAR_MENOR:
-        	if (relacoes_2d_addr_in[count_sub_vizinho-1] != endereco_vizinho_atual) // Para não adicionar o nó aprovado
-	        	if (!vizinho_invalido_in ) 
-	            	if (gma_obstaculos_rd_data_in == 1'b0)
-	            		next_state = ST_SALVAR_MENOR;
+        	if (nao_vizinho_atual && !vizinho_invalido_in && gma_obstaculos_rd_data_in == 1'b0) // Para não adicionar o nó aprovado
+		        	// if (!vizinho_invalido_in ) 
+		            	// if (gma_obstaculos_rd_data_in == 1'b0)
+        		next_state = ST_SALVAR_MENOR;
+		    else if (count_sub_vizinho == MAX_VIZINHOS-1)
+		    	next_state = ST_EXPANDIR_VIZINHOS;
         ST_SALVAR_MENOR:
         	next_state = ST_EXPANDIR_VIZINHOS;
         ST_EXPANDIR_VIZINHOS:
         	if (count_vizinho != MAX_VIZINHOS-1)
         		next_state = ST_ANALISAR_VIZINHO;
         	else
-        		next_state = ST_ENCONTRAR_APROVADO;
+        		if (count_aprovados == NUM_NA-1)
+        			next_state = ST_FINALIZAR;
+        		else
+        			next_state = ST_ENCONTRAR_APROVADO;
         ST_FINALIZAR:
         	if (fifo_empty && !aa_ocupado_in)
         		next_state = ST_IDLE;
     endcase
 end
-//*******************************************************
-// Convertendo entradas para 2d
-//*******************************************************
-
-generate
-    for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
-		assign aa_endereco_2d[i] = aa_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
-		assign aa_anterior_data_2d[i] = aa_anterior_data_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
-		assign aa_distancia_2d[i] = aa_distancia_in[DISTANCIA_WIDTH*i+DISTANCIA_WIDTH-1:DISTANCIA_WIDTH*i];
-    end
-endgenerate
+wire nao_vizinho_atual;
+assign nao_vizinho_atual = relacoes_2d_addr_in[count_sub_vizinho] != endereco_vizinho_atual;
 
 //*******************************************************
 //Salvando menor vizinho

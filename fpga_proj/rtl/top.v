@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-13 14:39:03
+//  Last Modified : 2022-10-19 10:53:12
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -13,13 +13,14 @@
 //==================================================================================================
 module top
         #(
-            parameter ADDR_WIDTH = 6,
+            parameter ADDR_WIDTH = 10,
             parameter DISTANCIA_WIDTH = 6,
             parameter CRITERIO_WIDTH = DISTANCIA_WIDTH + 1,
             parameter CUSTO_WIDTH = 4,
             parameter DATA_WIDTH = 8,
-            parameter RELACOES_DATA_WIDTH = 10,
-            parameter MAX_VIZINHOS = 10,
+            parameter MAX_VIZINHOS = 8,
+            parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
+            parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
             parameter NUM_NA = 8
         )
         (/*autoport*/
@@ -40,7 +41,7 @@ wire cme_aguardando,
      cme_caminho_pronto,
      cme_iniciar,
      cme_expandir,
-     cme_tem_ativo_out,
+     cme_atualizar_buffer,
      cme_construir_caminho;
 
 //sinais de saida do buffer aa
@@ -186,7 +187,7 @@ controlador_maquina_estados
             .caminho_pronto_out(cme_caminho_pronto),
             .iniciar_out(cme_iniciar),
             .expandir_out(cme_expandir),
-            .tem_ativo_out(cme_tem_ativo_out),
+            .atualizar_buffer_out(cme_atualizar_buffer),
             .construir_caminho_out(cme_construir_caminho)
         );
 
@@ -226,7 +227,7 @@ buffer
     (/*autoport*/
         .clk(clk),
         .rst_n(rst_n),
-        .write_en_in(cme_tem_ativo_out),
+        .write_en_in(cme_atualizar_buffer),
         .data_in({aa_aprovado, aa_endereco, aa_distancia}),
         .data_out({buff_aa_aprovado, buff_aa_endereco, buff_aa_distancia})
     );
@@ -237,6 +238,7 @@ localizador_vizinhos_validos
             .MAX_VIZINHOS(MAX_VIZINHOS),
             .RELACOES_DATA_WIDTH(RELACOES_DATA_WIDTH),
             .NUM_NA(NUM_NA),
+            .UMA_RELACAO_WIDTH(UMA_RELACAO_WIDTH),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
             .CUSTO_WIDTH(CUSTO_WIDTH),
             .DATA_WIDTH(DATA_WIDTH)
@@ -246,7 +248,7 @@ localizador_vizinhos_validos
             .clk(clk),
             .rst_n(rst_n),
             .cme_expandir_in(cme_expandir),
-            .aa_pronto_in(aa_pronto),
+            // .aa_pronto_in(aa_pronto),
             .aa_ocupado_in(aa_ocupado),
             .aa_anterior_data_in(aa_anterior_data),
             .aa_aprovado_in(buff_aa_aprovado),

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-13 14:08:12
+//  Last Modified : 2022-10-19 13:48:08
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -33,7 +33,7 @@ module avaliador_ativos
 			output [DISTANCIA_WIDTH*NUM_NA-1:0] aa_distancia_out,
       output aa_tem_ativo_out,
       output aa_ocupado_out,
-      output aa_pronto_out,
+      output reg aa_pronto_out,
       output aa_tem_aprovado_out,
       // Atualizar memória de anterior
       output [ADDR_WIDTH*NUM_NA-1:0] aa_anterior_data_out
@@ -64,7 +64,7 @@ wire ga_desativar;
 // wire ga_ocupado;
 // classificador_ativos
 wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
-// wire ca_pronto;
+wire ca_pronto;
 // avaliador ativos
 wire aa_atualizar_classificacao;
 //Registers
@@ -154,7 +154,23 @@ endgenerate
 
 assign aa_tem_ativo_out = |na_ativo;
 assign aa_tem_aprovado_out = |aa_aprovado_out;
-assign aa_atualizar_classificacao = |na_nova_menor_distancia;
+assign aa_atualizar_classificacao = ga_atualizar || ga_desativar;
+// assign aa_atualizar_classificacao = |na_nova_menor_distancia;
+// assign aa_pronto_out = !aa_atualizar_classificacao && ca_pronto && !atualizar_in && !aa_ocupado_out;
+
+
+always @(posedge clk or negedge rst_n) begin
+  if (!rst_n) begin
+    aa_pronto_out <= 1'b0;
+  end
+  else begin
+    if (atualizar_in || desativar_in)
+      aa_pronto_out <= 1'b0;
+    else if(ca_pronto)
+      aa_pronto_out <= 1'b1;
+
+  end
+end
 
 classificar_ativo
 		#(
@@ -170,6 +186,6 @@ classificar_ativo
       .na_ativo_in(na_ativo),
 			.ca_criterio_geral_out(ca_criterio_geral),
       .aa_atualizar_in(aa_atualizar_classificacao),
-      .ca_pronto_o(aa_pronto_out)
+      .ca_pronto_o(ca_pronto)
 		);
 endmodule

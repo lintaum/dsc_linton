@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : dual_port_ram.v
 //  Created On    : 2018-05-17 08:31:35
-//  Last Modified : 2022-08-29 09:29:03
+//  Last Modified : 2022-10-18 08:06:20
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : SENAI
@@ -14,7 +14,7 @@
 module dual_port_ram 
 	#(
 		parameter DATA_WIDTH = 32,
-		parameter ADDR_WIDTH = 10
+		parameter ADDR_WIDTH = 3
 	)
 	(
 	input clk,    // Clock
@@ -30,6 +30,7 @@ module dual_port_ram
 localparam MEM_SIZE = 2**ADDR_WIDTH;
 
 reg [DATA_WIDTH-1:0] mem [0:MEM_SIZE-1];
+// reg [DATA_WIDTH-1:0] mem [0:128];
 
 always @(posedge clk, negedge rst_n) begin : proc_mem
 	if(!rst_n) begin

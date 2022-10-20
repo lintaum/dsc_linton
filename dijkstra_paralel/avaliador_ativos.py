@@ -1,6 +1,6 @@
 inf = float('inf')
 
-
+debug_aa = False
 class NoAtivo:
     """Estrutura básica de um nó ativo"""
     def __init__(self, menor_vizinho, distancia, endereco, ativo=True):
@@ -54,7 +54,8 @@ class AvaliadorAtivos:
         if endereco_buffer is None:
             endereco_buffer = self.get_buffer_vazio()
         if endereco_buffer is None:
-            print("Estouro do buffer")
+            if debug_aa:
+                print("Estouro do buffer")
             return False
         self.buffer_ativos[endereco_buffer] = NoAtivo(menor_vizinho=menor_vizinho, distancia=distancia, endereco=endereco, ativo=True)
 
@@ -91,8 +92,19 @@ class AvaliadorAtivos:
                 criterio = no.criterio
         return criterio
 
+    def print_ativos(self):
+        ativos = ''
+        for no in self.buffer_ativos.values():
+            if no.ativo:
+                ativos = ativos + f"{no.endereco}, "
+        if debug_aa:
+            print("Ativos: " + ativos)
+
     def get_aprovados_no_buffer(self):
         criterio = self.get_criterio_out_no_buffer()
+        if debug_aa:
+            print(f"Critério geral: {criterio}")
+        self.print_ativos()
         aprovados = []
         for endereco, no in self.buffer_ativos.items():
             if no.distancia <= criterio and no.ativo:

@@ -21,6 +21,7 @@ def dict_2_vmem(dict_mem, obstaculos, max_bits_relacao=10, max_bits_custo=4, nom
             08 formats the number to eight digits zero-padded on the left
             b converts the number to its binary representation
         """
+        linha_relacao = ""
         for relacao, obstaculo, custo in linha:
             relacao_bin = ('{0:0' + f"{max_bits_relacao}" + 'b}').format(round_to_bin(relacao, max_bits_relacao))
             custo_bin = ('{0:0' + f"{max_bits_custo}" + 'b}').format(round_to_bin(custo, max_bits_custo))
@@ -28,6 +29,8 @@ def dict_2_vmem(dict_mem, obstaculos, max_bits_relacao=10, max_bits_custo=4, nom
             if len(relacao_bin) > max_bits_relacao or len(custo_bin) > max_bits_custo:
                 break
             relacao_str = relacao_str + relacao_bin + custo_bin
+            # relacao_str = relacao_str + f"R{relacao}C{custo}"
+            # relacao_str = relacao_str + f"C{custo}"
 
         for idx in range((max_relacoes-len(linha))):
             for idx2 in range(max_bits_relacao+max_bits_custo):
@@ -47,3 +50,40 @@ def dict_2_vmem(dict_mem, obstaculos, max_bits_relacao=10, max_bits_custo=4, nom
     text_file = open(nome_arquivo_obstaculo, "w")
     text_file.write(obstaculo_str)
     text_file.close()
+
+
+def salvar_param_sim(**kwargs):
+    text_file = open("../defines.vh", "w")
+    if 'max_bits_relacao' in kwargs:
+        max_bits_relacao = kwargs['max_bits_relacao']
+        text_file.write(f"`define ADDR_WIDTH {kwargs['max_bits_relacao']}\n")
+
+    if 'fonte' in kwargs:
+        text_file.write(f"`define FONTE {max_bits_relacao}'d{kwargs['fonte']}\n")
+
+    if 'destino' in kwargs:
+        text_file.write(f"`define DESTINO {max_bits_relacao}'d{kwargs['destino']}\n")
+
+    if 'custo' in kwargs:
+        text_file.write(f"`define CUSTO_CAMINHO {max_bits_relacao}'d{kwargs['custo']}\n")
+
+    if 'max_ativos' in kwargs:
+        text_file.write(f"`define MAX_ATIVOS {max_bits_relacao}'d{kwargs['max_ativos']}\n")
+
+    if 'menor_caminho' in kwargs:
+        texto = "`define MENOR_CAMINHO {"
+        count = 0;
+        for relacao in kwargs['menor_caminho']:
+            count += 1
+            if count < len(kwargs['menor_caminho']):
+                texto = texto + f"{max_bits_relacao}'d{relacao}, "
+            else:
+                texto = texto + f"{max_bits_relacao}'d{relacao}"
+        texto = texto + "}"
+
+        text_file.write(f"`define TAMANHO_CAMINHO {count}\n")
+        text_file.write(texto)
+
+    text_file.close()
+
+

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-10-13 11:06:39
+//  Last Modified : 2022-10-19 11:17:27
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -37,6 +37,7 @@ genvar i;
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
 //Registers
 reg [COUNT_WIDTH-1:0] count;
+reg [CRITERIO_WIDTH-1:0] ca_criterio_geral;
 
 //*******************************************************
 //General Purpose Signals
@@ -55,11 +56,13 @@ always @(posedge clk or negedge rst_n) begin
       count <= {COUNT_WIDTH{1'b0}};
    end
    else begin
-   		if (parar_contagem) begin
-         	count <= {COUNT_WIDTH{1'b0}};
+   		if (aa_atualizar_in)
+         	count <= 1;
+   		else if (parar_contagem) begin
+     		count <= {COUNT_WIDTH{1'b0}};
       	end
       	else if (aa_atualizar_in || count != 0)
-      		count <= count +1'b1;
+      		count <= count + 1'b1;
    end
 end
 
@@ -70,8 +73,12 @@ always @(posedge clk or negedge rst_n) begin
 	else begin
 		if (aa_atualizar_in)
 			ca_pronto_o <= 1'b0;
-		else if (parar_contagem)
-			ca_pronto_o <= 1'b1;
+		else
+			ca_pronto_o <= parar_contagem;
+		// if (aa_atualizar_in)
+		// 	ca_pronto_o <= 1'b0;
+		// else if (parar_contagem)
+		// 	ca_pronto_o <= 1'b1;
 	end
 end
 
@@ -82,8 +89,12 @@ end
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		ca_criterio_geral_out <= {CRITERIO_WIDTH{1'b1}};
+		ca_criterio_geral <= {CRITERIO_WIDTH{1'b1}};
 	end
 	else begin
+		if (parar_contagem)
+			ca_criterio_geral <= ca_criterio_geral_out;
+			
 		if (aa_atualizar_in)
 			ca_criterio_geral_out = na_criterio_2d[0];
 		else if ((ca_criterio_geral_out > na_criterio_2d[count]) & na_ativo_in[count])

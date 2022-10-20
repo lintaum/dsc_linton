@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : controlador_maquina_estados.v
 //  Created On    : 2022-10-06 08:19:57
-//  Last Modified : 2022-10-13 10:17:14
+//  Last Modified : 2022-10-19 14:23:19
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -18,7 +18,7 @@ module controlador_maquina_estados
 			input tem_ativo_in,
             input aa_ocupado_in,
             input aa_pronto_in,
-            input tem_aprovado_in,
+            // input tem_aprovado_in,
 			input iniciar_in,
 			input caminho_pronto_in,
 			input lido_in,
@@ -27,7 +27,7 @@ module controlador_maquina_estados
             output caminho_pronto_out,
             output iniciar_out,
             output reg expandir_out,
-            output tem_ativo_out,
+            output atualizar_buffer_out,
             output construir_caminho_out
 		);
 //*******************************************************
@@ -101,7 +101,7 @@ assign caminho_pronto_out = state == ST_PRONTO;
 assign iniciar_out = state == ST_INICIALIZAR;
 // assign expandir_out = state == ST_EXPANDIR_ATUALIZAR;
 assign construir_caminho_out = state == ST_CONSTRUIR_CAMINHO;
-assign tem_ativo_out = state == ST_TEM_ATIVO;
+assign atualizar_buffer_out = state == ST_TEM_ATIVO && aa_pronto_in;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
