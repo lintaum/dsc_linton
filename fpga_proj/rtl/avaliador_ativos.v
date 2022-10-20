@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-19 13:48:08
+//  Last Modified : 2022-10-20 14:45:26
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -24,6 +24,7 @@ module avaliador_ativos
 			input rst_n,
       input desativar_in,
       input atualizar_in,
+      input remover_aprovados_in,
       input [ADDR_WIDTH-1:0] endereco_in,
       input [CUSTO_WIDTH-1:0] menor_vizinho_in,
       input [DISTANCIA_WIDTH-1:0] distancia_in,
@@ -132,6 +133,7 @@ generate
     (/*autoport*/
       .clk(clk),
       .rst_n(rst_n),
+      .remover_aprovados_in(remover_aprovados_in),
       .menor_vizinho_in(ga_menor_vizinho),
       .distancia_in(ga_distancia),
       .ca_criterio_geral_in(ca_criterio_geral),

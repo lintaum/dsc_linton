@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-20 12:12:23
+//  Last Modified : 2022-10-20 15:17:15
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -11,6 +11,9 @@
 //  1) A fifo é inicializada com todos os espaços vazios
 //  2) O avaliador de ativos solicita a leitura do próximo espaço vazio, então é realizada uma leitura da fifo
 //  3) Quando um nó é desativado, sua posição é liberada e armazenada na fifo
+//  Problema 1: Quando um nó é desativado, e o mesmo possuí diversos vizinhos que serão ativados, caso a fifo seja do tamanho de NA 
+//  não existirá espaço para armazenar os novos nós ativos.
+//  Problema 2: Ao se aumentar o tamanho da fifo para resolver a situção do problema 1, se gerou outro problema.
 //==================================================================================================
 module gerenciador_ativos
         #(
@@ -52,7 +55,8 @@ localparam ST_ATUALIZAR = 2;
 localparam ST_PROCURANDO = 3;
 localparam ST_ENCONTROU = 4;
 localparam COUNT_WIDTH = 3;
-localparam FIDO_ADD_WIDTH = $clog2(NUM_NA);
+localparam FIDO_DEPTH = 4*NUM_NA;
+localparam FIDO_ADD_WIDTH = $clog2(FIDO_DEPTH);
 //Wires
 genvar i;
 wire [ADDR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
@@ -71,7 +75,7 @@ reg [NUM_NA-1:0] count;
 reg ler_fifo;
 reg escrever_fifo;
 reg [NUM_NA-1:0] fifo_data_in;
-
+reg ga_desativar_reg, ga_atualizar_reg;
 //*******************************************************
 //Flag signals
 //*******************************************************
@@ -103,7 +107,7 @@ always @(*) begin
                 next_state = ST_ATUALIZAR;
         end
         ST_DESATIVAR:
-            if (tem_hit)
+            // if (tem_hit)
                 next_state = ST_ENCONTROU;
         ST_ATUALIZAR:
             if (tem_hit)
@@ -123,8 +127,8 @@ end
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        ga_desativar_out <= 1'b0;
-        ga_atualizar_out <= 1'b0;
+        ga_desativar_reg <= 1'b0;
+        ga_atualizar_reg <= 1'b0;
         ga_endereco_out <= {ADDR_WIDTH{1'b0}};
         ga_anterior_out <= {ADDR_WIDTH{1'b0}};
         ga_menor_vizinho_out <= {CUSTO_WIDTH{1'b0}};
@@ -134,8 +138,8 @@ always @(posedge clk or negedge rst_n) begin
         if (state == ST_IDLE) begin
             ga_endereco_out <= endereco_in;
             ga_anterior_out <= anterior_in;
-            ga_desativar_out <= desativar_in;
-            ga_atualizar_out <= atualizar_in;
+            ga_desativar_reg <= desativar_in;
+            ga_atualizar_reg <= atualizar_in;
             ga_menor_vizinho_out <= menor_vizinho_in;
             ga_distancia_out <= distancia_in;
         end
@@ -164,12 +168,11 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         escrever_fifo <= 1'b0;
     end
-    if (init && !fifo_almost_full)
+    // if (init && !fifo_almost_full)
+    if (init && count < NUM_NA)
         escrever_fifo <= 1'b1;
-    else if (state == ST_ENCONTROU) begin
-        if (ga_desativar_out)
-            escrever_fifo <= 1'b1;
-
+    else if (ga_desativar_out) begin
+        escrever_fifo <= 1'b1;
     end
     else begin
         escrever_fifo <= 1'b0;
@@ -258,6 +261,21 @@ always @(posedge clk or negedge rst_n) begin
         ga_habilitar_out <= {NUM_NA{1'b0}};
 end
 
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        ga_atualizar_out <= 1'b0;
+        ga_desativar_out <= 1'b0;
+    end
+    else if (state == ST_ENCONTROU) begin
+        ga_atualizar_out <= ga_atualizar_reg;
+        ga_desativar_out <= ga_desativar_reg;
+    end
+    else begin
+        ga_atualizar_out <= 1'b0;
+        ga_desativar_out <= 1'b0;
+    end
+end
+
 //*******************************************************
 //Instantiations
 //*******************************************************
@@ -265,8 +283,9 @@ end
 syn_fifo 
 #(
     .DATA_WIDTH(NUM_NA),
-    .ADDR_WIDTH(FIDO_ADD_WIDTH),
-    .RAM_DEPTH(NUM_NA)
+    .ADDR_WIDTH(FIDO_ADD_WIDTH)
+    // .RAM_DEPTH(256)
+    // .RAM_DEPTH(2*NUM_NA)
   )
 fifo_vazios
   (

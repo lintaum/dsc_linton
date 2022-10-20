@@ -1,6 +1,6 @@
 inf = float('inf')
 
-debug_aa = False
+debug_aa = True
 class NoAtivo:
     """Estrutura básica de um nó ativo"""
     def __init__(self, menor_vizinho, distancia, endereco, ativo=True):

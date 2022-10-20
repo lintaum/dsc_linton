@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-10-07 07:49:07
+//  Last Modified : 2022-10-20 14:53:18
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -21,6 +21,7 @@ module no_ativo
 		(/*autoport*/
 			input clk,
 			input rst_n,
+			input remover_aprovados_in,
 			input [CUSTO_WIDTH-1:0] menor_vizinho_in,
 			input [DISTANCIA_WIDTH-1:0] distancia_in,
 			input [CRITERIO_WIDTH-1:0] ca_criterio_geral_in,
@@ -120,6 +121,8 @@ always @(posedge clk or negedge rst_n) begin
 		na_ativo_out <= {1'b0};
 	end
 	else begin
+		// if (remover_aprovados_in)
+			// na_ativo_out <= 1'b0;
 		if (ga_habilitar_in) begin
 			if (atualizar_in)
 				na_ativo_out <= 1'b1;

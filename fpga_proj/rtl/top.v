@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-19 10:53:12
+//  Last Modified : 2022-10-20 14:45:53
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -203,6 +203,7 @@ avaliador_ativos
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
+            .remover_aprovados_in(cme_atualizar_buffer),
             .desativar_in(lvv_desativar),
             .atualizar_in(atualizar_mix),
             .endereco_in(endereco_mix),

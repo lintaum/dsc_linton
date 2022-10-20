@@ -69,7 +69,7 @@ class DijkstraParallel():
             """Passo 1 - Identificando aprovados"""
             buffer00 = []
             aprovados_distancia = self.avaliador_ativos.get_aprovados_no_buffer()
-            # print(f"Aprovados: {aprovados_distancia}")
+            print(f"Aprovados: {aprovados_distancia}")
             for aprovado, distancia_v in aprovados_distancia:
                 num_passo1 += 1
                 """salvando no buffer de saida"""
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     teste = True
     # grafico+ = False
     num_nos = 128
-    inicio = 11
+    inicio = 23
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True
