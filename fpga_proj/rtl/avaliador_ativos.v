@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-21 06:49:12
+//  Last Modified : 2022-10-21 08:44:06
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -24,6 +24,7 @@ module avaliador_ativos
 			input rst_n,
       input desativar_in,
       input atualizar_in,
+      input lvv_pronto_in,
       input remover_aprovados_in,
       input [ADDR_WIDTH-1:0] endereco_in,
       input [CUSTO_WIDTH-1:0] menor_vizinho_in,
@@ -168,7 +169,9 @@ always @(posedge clk or negedge rst_n) begin
   end
   else begin
     aa_atualizar_classificacao <= ga_atualizar || ga_desativar;
+    // aa_atualizar_classificacao <= lvv_pronto_in;
     if (atualizar_in || desativar_in)
+    // if (lvv_pronto_in)
       aa_pronto_out <= 1'b0;
     else if(ca_pronto)
       aa_pronto_out <= 1'b1;

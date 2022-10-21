@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-20 14:45:53
+//  Last Modified : 2022-10-21 08:46:03
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -204,6 +204,7 @@ avaliador_ativos
             .clk(clk),
             .rst_n(rst_n),
             .remover_aprovados_in(cme_atualizar_buffer),
+            .lvv_pronto_in(lvv_pronto),
             .desativar_in(lvv_desativar),
             .atualizar_in(atualizar_mix),
             .endereco_in(endereco_mix),
@@ -249,7 +250,7 @@ localizador_vizinhos_validos
             .clk(clk),
             .rst_n(rst_n),
             .cme_expandir_in(cme_expandir),
-            // .aa_pronto_in(aa_pronto),
+            .aa_pronto_in(aa_pronto),
             .aa_ocupado_in(aa_ocupado),
             .aa_anterior_data_in(aa_anterior_data),
             .aa_aprovado_in(buff_aa_aprovado),

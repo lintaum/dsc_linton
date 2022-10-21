@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-21 06:38:50
+//  Last Modified : 2022-10-21 09:23:29
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -33,7 +33,7 @@ localparam CRITERIO_WIDTH = DISTANCIA_WIDTH + 1;
 localparam DATA_WIDTH = 8;
 localparam UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH;
 localparam RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH);
-localparam NUM_NA = `MAX_ATIVOS*2;
+localparam NUM_NA = `MAX_ATIVOS;
 //Wires
 genvar i;
 logic clk;
@@ -135,8 +135,11 @@ endtask : verificar
 
 task verificar_distancia();
    forever begin
-      @(posedge top_u0.gerenciador_memoria_anterior_u0.init);
-      if (top_u0.gerenciador_memoria_anterior_u0.init) begin
+      //@(posedge top_u0.gerenciador_memoria_anterior_u0.init);
+      @(posedge top_u0.clk);
+      if (top_u0.avaliador_ativos_u0.desativar_in && top_u0.avaliador_ativos_u0.endereco_in == `DESTINO) begin
+
+      // if (top_u0.gerenciador_memoria_anterior_u0.init) begin
          for (int count2 = 0; count2 < NUM_NA; count2++) begin
             if (top_u0.avaliador_ativos_u0.na_endereco_2d[count2] == `DESTINO) begin
                if (top_u0.avaliador_ativos_u0.na_distancia_2d[count2] != `CUSTO_CAMINHO) begin

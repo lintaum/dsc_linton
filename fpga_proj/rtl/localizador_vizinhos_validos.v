@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-19 11:01:48
+//  Last Modified : 2022-10-21 09:05:28
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -32,7 +32,7 @@ module localizador_vizinhos_validos
 			input clk,
 			input rst_n,
 			input aa_ocupado_in,
-			// input aa_pronto_in,
+			input aa_pronto_in,
 			input [NUM_NA-1:0] aa_aprovado_in,
       		input [ADDR_WIDTH*NUM_NA-1:0] aa_endereco_in,
       		input [ADDR_WIDTH*NUM_NA-1:0] aa_anterior_data_in,
@@ -67,7 +67,7 @@ module localizador_vizinhos_validos
 			// Atualizando anterior
 			output reg [ADDR_WIDTH-1:0] lvv_anterior_data_out,
 			// Indicando que o processamento atual termninou
-			output lvv_pronto_out
+			output reg lvv_pronto_out
 			
 		);
 //*******************************************************
@@ -118,15 +118,15 @@ assign salvar_menor = state == ST_SALVAR_MENOR;
 assign no_aprovado = aa_aprovado_in[count_aprovados] == 1'b1;
 assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
 assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
-assign lvv_pronto_out = state == ST_FINALIZAR && (fifo_empty && !aa_ocupado_in);
+assign lvv_pronto = state == ST_FINALIZAR && (fifo_empty && !aa_ocupado_in && aa_pronto_in);
 
-reg lvv_pronto_reg;
+wire lvv_pronto;
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
-		lvv_pronto_reg <= 1'b0;
+		lvv_pronto_out <= 1'b0;
 	end
 	else begin
-		lvv_pronto_reg <= lvv_pronto_out;
+		lvv_pronto_out <= lvv_pronto;
 	end
 end
 //*******************************************************
@@ -176,14 +176,13 @@ endgenerate
 // Estabelecendo os nós aprovados e desativando no AA
 //*******************************************************
 always @(*) begin
-	
 	lvv_estabelecidos_write_en_out = 1'b0;
 	lvv_estabelecidos_read_en_out = 1'b0;
 	lvv_estabelecidos_write_data_out = 1'b0;
 	lvv_anterior_data_out = aa_anterior_data_2d[count_aprovados];
 	lvv_estabelecidos_write_addr_out = aa_endereco_2d[count_aprovados];
 	lvv_estabelecidos_read_addr_out = fifo_data_out[ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH+ADDR_WIDTH-1:ADDR_WIDTH+DISTANCIA_WIDTH+CUSTO_WIDTH];
-	if (state == ST_ENCONTRAR_VIZINHOS) begin
+	if (state == ST_ESTABILIZAR && no_aprovado && !lvv_desativar_out && !aa_ocupado_in) begin
 		lvv_estabelecidos_write_en_out = 1'b1;
 		lvv_estabelecidos_write_data_out = 1'b1;
 	end
@@ -249,13 +248,14 @@ always @(posedge clk or negedge rst_n) begin
       count_aprovados <= {COUNT_WIDTH{1'b0}};
    end
    else begin
-      if (state == ST_IDLE) begin
+      if (state == ST_IDLE || (state == ST_ESTABILIZAR && next_state == ST_ENCONTRAR_APROVADO)) begin
          count_aprovados <= {COUNT_WIDTH{1'b0}};
       end
-      else if (next_state == ST_ENCONTRAR_APROVADO)
+      else if (next_state == ST_ENCONTRAR_APROVADO || next_state == ST_ESTABILIZAR && !lvv_desativar_out && !aa_ocupado_in)
          count_aprovados <= count_aprovados + 1'b1;
    end
 end
+
 
 always @(posedge clk or negedge rst_n) begin
    if (!rst_n) begin
@@ -286,7 +286,7 @@ end
 //*******************************************************
 //FSM
 //*******************************************************
-localparam STATE_WIDTH = 3;
+localparam STATE_WIDTH = 4;
 localparam ST_IDLE = 0,
 		   ST_ENCONTRAR_APROVADO = 1,
 		   ST_ENCONTRAR_VIZINHOS = 2,
@@ -294,7 +294,8 @@ localparam ST_IDLE = 0,
 		   ST_ENCONTRAR_MENOR = 4,
 		   ST_SALVAR_MENOR = 5,
 		   ST_EXPANDIR_VIZINHOS = 6,
-		   ST_FINALIZAR = 7;
+		   ST_FINALIZAR = 7,
+		   ST_ESTABILIZAR = 8;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -309,10 +310,14 @@ always @(*) begin
     next_state = state;
     case (state)
         ST_IDLE:
-            // if (cme_expandir_in && !lvv_pronto_out && aa_pronto_in)
-            if (cme_expandir_in && !lvv_pronto_out && !lvv_pronto_reg)
-                next_state = ST_ENCONTRAR_APROVADO;
+            // if (cme_expandir_in && !lvv_pronto && aa_pronto_in)
+            if (cme_expandir_in && !lvv_pronto && !lvv_pronto_out)
+                next_state = ST_ESTABILIZAR;
+                // next_state = ST_ENCONTRAR_APROVADO;
+        ST_ESTABILIZAR:
         // Identificando um nó aprovado a ser analizado
+	        if (count_aprovados == NUM_NA-1 && !lvv_desativar_out && !aa_ocupado_in)
+	            next_state = ST_ENCONTRAR_APROVADO;
         ST_ENCONTRAR_APROVADO:
             if (no_aprovado)
                 next_state = ST_ENCONTRAR_VIZINHOS;
@@ -348,7 +353,7 @@ always @(*) begin
         		else
         			next_state = ST_ENCONTRAR_APROVADO;
         ST_FINALIZAR:
-        	if (fifo_empty && !aa_ocupado_in)
+        	if (fifo_empty && !aa_ocupado_in && aa_pronto_in)
         		next_state = ST_IDLE;
     endcase
 end
@@ -384,7 +389,7 @@ always @(posedge clk or negedge rst_n) begin
 	end
 	else begin
 		fifo_read_en <= 1'b0;
-		if (state == ST_ENCONTRAR_VIZINHOS) begin
+		if (state == ST_ESTABILIZAR && !lvv_desativar_out && !aa_ocupado_in) begin
 			lvv_atualizar_out <= 1'b0;
 			lvv_desativar_out <= lvv_estabelecidos_write_en_out;
 			lvv_desativar_addr_out <= lvv_estabelecidos_write_addr_out;

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-10-21 06:54:29
+//  Last Modified : 2022-10-21 07:45:24
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -75,10 +75,6 @@ always @(posedge clk or negedge rst_n) begin
 			ca_pronto_o <= 1'b0;
 		else
 			ca_pronto_o <= parar_contagem;
-		// if (aa_atualizar_in)
-		// 	ca_pronto_o <= 1'b0;
-		// else if (parar_contagem)
-		// 	ca_pronto_o <= 1'b1;
 	end
 end
 
@@ -89,12 +85,8 @@ end
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		ca_criterio_geral_out <= {CRITERIO_WIDTH{1'b1}};
-		// ca_criterio_geral <= {CRITERIO_WIDTH{1'b1}};
 	end
-	else begin
-		// if (parar_contagem)
-		// 	ca_criterio_geral <= ca_criterio_geral_out;
-			
+	else begin			
 		if (aa_atualizar_in)
 			if (na_ativo_in[0])
 				ca_criterio_geral_out = na_criterio_2d[0];

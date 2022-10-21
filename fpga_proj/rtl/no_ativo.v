@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-10-20 14:53:18
+//  Last Modified : 2022-10-21 07:45:33
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -121,8 +121,6 @@ always @(posedge clk or negedge rst_n) begin
 		na_ativo_out <= {1'b0};
 	end
 	else begin
-		// if (remover_aprovados_in)
-			// na_ativo_out <= 1'b0;
 		if (ga_habilitar_in) begin
 			if (atualizar_in)
 				na_ativo_out <= 1'b1;

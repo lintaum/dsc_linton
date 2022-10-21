@@ -186,11 +186,12 @@ if __name__ == '__main__':
     teste = True
     # grafico+ = False
     num_nos = 128
-    inicio = 127
+    inicio = 40
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True
 
+    errou = False
     if not teste:
         inicio = num_nos - 1
 
@@ -211,6 +212,7 @@ if __name__ == '__main__':
             warnings.warn(f"Foram encontrados erros: num de nós {idx}")
             print(f"Referência {caminho2, custo2}")
             print(f"Modelo {caminho, custo}")
+            errou = True
             break
 
         else:
@@ -222,12 +224,13 @@ if __name__ == '__main__':
                 print(f"Referência {caminho, custo}")
                 warnings.warn(f"Foram encontrados erros na simulação: num de nós {idx}")
                 playsound('../media/errou.mp3')
+                errou = True
                 break
             else:
                 # playsound('../media/acertou.mp3')
                 print(f"Passou na Simulação {idx}!")
         else:
             print(f"Não é possível chegar na fonte {idx}!")
-
-    playsound('../media/acabou.mp3')
+    if teste and not errou:
+        playsound('../media/acabou.mp3')
     # print(f"Passou Tudo!")
