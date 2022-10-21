@@ -202,7 +202,7 @@ if __name__ == '__main__':
     teste = True
     # grafico+ = False
     num_nos = 127
-    inicio = 40
+    inicio = 73
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True

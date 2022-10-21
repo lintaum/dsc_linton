@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-21 11:31:47
+//  Last Modified : 2022-10-21 11:40:26
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -15,6 +15,7 @@
 //  não existirá espaço para armazenar os novos nós ativos.
 //  Problema 2: Ao se aumentar o tamanho da fifo para resolver a situção do problema 1, se gerou outro problema. Acredito que está escrevendo 
 //  mais do que existem NA disponiveis, ao aumentar a quantidade de NA o problema é resolvido.
+//  Solução: O lVV foi alterado para realizar no inicio das suas operações a desativação de todos os nós aprovados.
 //==================================================================================================
 module gerenciador_ativos
         #(
@@ -61,7 +62,6 @@ wire fifo_empty;
 wire fifo_almost_empty;
 wire [NUM_NA-1:0] fifo_data_out;
 wire [NUM_NA-1:0] hit;
-wire [NUM_NA-1:0] hit_fifo;
 wire tem_hit;
 wire tem_operacao;
 //Registers
@@ -69,13 +69,12 @@ reg [NUM_NA-1:0] count;
 reg ler_fifo;
 reg escrever_fifo;
 reg [NUM_NA-1:0] fifo_data_in;
-reg ga_desativar_reg, ga_atualizar_reg;
 reg init;
 //*******************************************************
 //Flag signals
 //*******************************************************
 assign ga_buffers_cheios_o = fifo_empty;
-assign ga_ocupado_o = tem_operacao;
+assign ga_ocupado_o = tem_operacao || ga_desativar_out || ga_atualizar_out;
 assign tem_hit = |hit;
 assign tem_operacao = desativar_in || atualizar_in;
 

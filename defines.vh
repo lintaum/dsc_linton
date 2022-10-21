@@ -1,10 +1,10 @@
-`define ADDR_WIDTH 6
+`define ADDR_WIDTH 7
 `define FONTE 32'd0
-`define DESTINO 32'd41
-`define CUSTO_CAMINHO 32'd38
+`define DESTINO 32'd75
+`define CUSTO_CAMINHO 32'd47
 `define CUSTO_WIDTH 32'd4
 `define MAX_VIZINHOS 32'd8
-`define DISTANCIA_WIDTH 32'd10
-`define MAX_ATIVOS 32'd9
-`define TAMANHO_CAMINHO 12
-`define MENOR_CAMINHO {6'd0, 6'd1, 6'd8, 6'd14, 6'd13, 6'd20, 6'd25, 6'd31, 6'd32, 6'd27, 6'd34, 6'd41}
+`define DISTANCIA_WIDTH 32'd11
+`define MAX_ATIVOS 32'd13
+`define TAMANHO_CAMINHO 13
+`define MENOR_CAMINHO {7'd0, 7'd1, 7'd10, 7'd18, 7'd17, 7'd24, 7'd32, 7'd41, 7'd49, 7'd57, 7'd65, 7'd74, 7'd75}
