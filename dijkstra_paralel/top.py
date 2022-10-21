@@ -7,7 +7,7 @@ from dijkstra_otimizado.dijkstra_out_sequencial import main as main_sequencial
 from dijkstra.dijkstra_crauser import main as main_crauser
 from crauser.random_graph import GraphGen
 import warnings
-
+from playsound import playsound
 from util.gen_mem_files import dict_2_vmem, salvar_param_sim
 from util.simular_vivado import simular_vivado
 
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     teste = True
     # grafico+ = False
     num_nos = 128
-    inicio = 10
+    inicio = 127
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True
@@ -221,9 +221,13 @@ if __name__ == '__main__':
                 print(f"Referência {caminho2, custo2}")
                 print(f"Referência {caminho, custo}")
                 warnings.warn(f"Foram encontrados erros na simulação: num de nós {idx}")
+                playsound('../media/errou.mp3')
                 break
             else:
+                # playsound('../media/acertou.mp3')
                 print(f"Passou na Simulação {idx}!")
         else:
             print(f"Não é possível chegar na fonte {idx}!")
+
+    playsound('../media/acabou.mp3')
     # print(f"Passou Tudo!")
