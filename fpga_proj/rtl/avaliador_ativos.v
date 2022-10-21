@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-21 14:35:21
+//  Last Modified : 2022-10-21 14:38:08
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -82,7 +82,6 @@ endgenerate
 //*******************************************************
 //Outputs
 //*******************************************************
-
 assign aa_tem_ativo_out = |na_ativo;
 assign aa_tem_aprovado_out = |aa_aprovado_out;
 
