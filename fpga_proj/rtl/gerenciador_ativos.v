@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-20 15:17:15
+//  Last Modified : 2022-10-20 15:38:32
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -13,7 +13,8 @@
 //  3) Quando um nó é desativado, sua posição é liberada e armazenada na fifo
 //  Problema 1: Quando um nó é desativado, e o mesmo possuí diversos vizinhos que serão ativados, caso a fifo seja do tamanho de NA 
 //  não existirá espaço para armazenar os novos nós ativos.
-//  Problema 2: Ao se aumentar o tamanho da fifo para resolver a situção do problema 1, se gerou outro problema.
+//  Problema 2: Ao se aumentar o tamanho da fifo para resolver a situção do problema 1, se gerou outro problema. Acredito que está escrevendo 
+//  mais do que existem NA disponiveis, ao aumentar a quantidade de NA o problema é resolvido.
 //==================================================================================================
 module gerenciador_ativos
         #(
@@ -55,7 +56,7 @@ localparam ST_ATUALIZAR = 2;
 localparam ST_PROCURANDO = 3;
 localparam ST_ENCONTROU = 4;
 localparam COUNT_WIDTH = 3;
-localparam FIDO_DEPTH = 4*NUM_NA;
+localparam FIDO_DEPTH = NUM_NA;
 localparam FIDO_ADD_WIDTH = $clog2(FIDO_DEPTH);
 //Wires
 genvar i;
@@ -232,7 +233,6 @@ end
 generate
     for (i = 0; i < NUM_NA; i = i + 1)begin
         assign hit[i] = ((na_endereco_2d[i] == ga_endereco_out) && na_ativo_in[i]) ? 1'b1: 1'b0;
-        // assign hit_fifo[i] = fifo_data_out == i ? 1'b1: 1'b0;
     end
 endgenerate
 // end
@@ -284,8 +284,6 @@ syn_fifo
 #(
     .DATA_WIDTH(NUM_NA),
     .ADDR_WIDTH(FIDO_ADD_WIDTH)
-    // .RAM_DEPTH(256)
-    // .RAM_DEPTH(2*NUM_NA)
   )
 fifo_vazios
   (

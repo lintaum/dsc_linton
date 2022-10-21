@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-10-19 11:17:27
+//  Last Modified : 2022-10-21 06:54:29
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -37,7 +37,7 @@ genvar i;
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
 //Registers
 reg [COUNT_WIDTH-1:0] count;
-reg [CRITERIO_WIDTH-1:0] ca_criterio_geral;
+// reg [CRITERIO_WIDTH-1:0] ca_criterio_geral;
 
 //*******************************************************
 //General Purpose Signals
@@ -89,14 +89,17 @@ end
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		ca_criterio_geral_out <= {CRITERIO_WIDTH{1'b1}};
-		ca_criterio_geral <= {CRITERIO_WIDTH{1'b1}};
+		// ca_criterio_geral <= {CRITERIO_WIDTH{1'b1}};
 	end
 	else begin
-		if (parar_contagem)
-			ca_criterio_geral <= ca_criterio_geral_out;
+		// if (parar_contagem)
+		// 	ca_criterio_geral <= ca_criterio_geral_out;
 			
 		if (aa_atualizar_in)
-			ca_criterio_geral_out = na_criterio_2d[0];
+			if (na_ativo_in[0])
+				ca_criterio_geral_out = na_criterio_2d[0];
+			else
+				ca_criterio_geral_out <= {CRITERIO_WIDTH{1'b1}};
 		else if ((ca_criterio_geral_out > na_criterio_2d[count]) & na_ativo_in[count])
 			ca_criterio_geral_out <= na_criterio_2d[count];
 	end

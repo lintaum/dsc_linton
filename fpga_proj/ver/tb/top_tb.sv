@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-20 08:20:34
+//  Last Modified : 2022-10-21 06:38:50
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -33,7 +33,7 @@ localparam CRITERIO_WIDTH = DISTANCIA_WIDTH + 1;
 localparam DATA_WIDTH = 8;
 localparam UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH;
 localparam RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH);
-localparam NUM_NA = `MAX_ATIVOS;
+localparam NUM_NA = `MAX_ATIVOS*2;
 //Wires
 genvar i;
 logic clk;

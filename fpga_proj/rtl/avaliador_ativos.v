@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-20 14:45:26
+//  Last Modified : 2022-10-21 06:49:12
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -67,7 +67,7 @@ wire ga_desativar;
 wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
 wire ca_pronto;
 // avaliador ativos
-wire aa_atualizar_classificacao;
+reg aa_atualizar_classificacao;
 //Registers
 
 
@@ -156,7 +156,7 @@ endgenerate
 
 assign aa_tem_ativo_out = |na_ativo;
 assign aa_tem_aprovado_out = |aa_aprovado_out;
-assign aa_atualizar_classificacao = ga_atualizar || ga_desativar;
+// assign aa_atualizar_classificacao = ga_atualizar || ga_desativar;
 // assign aa_atualizar_classificacao = |na_nova_menor_distancia;
 // assign aa_pronto_out = !aa_atualizar_classificacao && ca_pronto && !atualizar_in && !aa_ocupado_out;
 
@@ -164,8 +164,10 @@ assign aa_atualizar_classificacao = ga_atualizar || ga_desativar;
 always @(posedge clk or negedge rst_n) begin
   if (!rst_n) begin
     aa_pronto_out <= 1'b0;
+    aa_atualizar_classificacao <= 1'b0;
   end
   else begin
+    aa_atualizar_classificacao <= ga_atualizar || ga_desativar;
     if (atualizar_in || desativar_in)
       aa_pronto_out <= 1'b0;
     else if(ca_pronto)
