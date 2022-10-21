@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-10-21 07:45:24
+//  Last Modified : 2022-10-21 14:28:58
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -37,7 +37,6 @@ genvar i;
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
 //Registers
 reg [COUNT_WIDTH-1:0] count;
-// reg [CRITERIO_WIDTH-1:0] ca_criterio_geral;
 
 //*******************************************************
 //General Purpose Signals
@@ -66,18 +65,6 @@ always @(posedge clk or negedge rst_n) begin
    end
 end
 
-always @(posedge clk or negedge rst_n) begin
-	if (!rst_n) begin
-		ca_pronto_o <= 1'b0;
-	end
-	else begin
-		if (aa_atualizar_in)
-			ca_pronto_o <= 1'b0;
-		else
-			ca_pronto_o <= parar_contagem;
-	end
-end
-
 //*******************************************************
 //Outputs
 //*******************************************************
@@ -97,6 +84,17 @@ always @(posedge clk or negedge rst_n) begin
 	end
 end
 
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		ca_pronto_o <= 1'b0;
+	end
+	else begin
+		if (aa_atualizar_in)
+			ca_pronto_o <= 1'b0;
+		else
+			ca_pronto_o <= parar_contagem;
+	end
+end
 //*******************************************************
 //Instantiations
 //*******************************************************

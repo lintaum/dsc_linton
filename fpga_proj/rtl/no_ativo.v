@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-10-21 07:45:33
+//  Last Modified : 2022-10-21 14:33:01
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -32,13 +32,10 @@ module no_ativo
 			input ga_habilitar_in,
 			output reg [CRITERIO_WIDTH-1:0] na_criterio_out,
 			output reg [DISTANCIA_WIDTH-1:0] na_distancia_out,
-			output reg na_atualizar_anterior_out,
 			output reg [ADDR_WIDTH-1:0] na_anterior_out,
 			output reg na_aprovado_out,
 			output reg [ADDR_WIDTH-1:0] na_endereco_out,
-			output reg na_ativo_out,
-			output reg na_nova_menor_distancia_out
-
+			output reg na_ativo_out
 		);
 //*******************************************************
 //Internal
@@ -56,7 +53,6 @@ assign desativar = (desativar_in & na_ativo_out) & ga_habilitar_in;
 assign atualizar = (atualizar_in & na_ativo_out) & ga_habilitar_in;
 assign nova_menor_distancia = na_distancia_out > distancia_in;
 assign aprovado = !desativar & (ca_criterio_geral_in >= na_distancia_out) & na_ativo_out;
-
 
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
@@ -124,7 +120,8 @@ always @(posedge clk or negedge rst_n) begin
 		if (ga_habilitar_in) begin
 			if (atualizar_in)
 				na_ativo_out <= 1'b1;
-			else if (!atualizar_in & desativar_in)
+			else if (desativar_in)
+			// else if (!atualizar_in & desativar_in)
 				na_ativo_out <= 1'b0;
 		end
 	end
@@ -139,32 +136,6 @@ always @(posedge clk or negedge rst_n) begin
 			na_criterio_out <= menor_vizinho_r + na_distancia_out;
 		else
 			na_criterio_out <= {CRITERIO_WIDTH{1'b1}};
-	end
-end
-
-always @(posedge clk or negedge rst_n) begin
-	if (!rst_n) begin
-		na_atualizar_anterior_out <= 1'b0;
-	end
-	else begin
-		if (ga_habilitar_in & desativar)
-			na_atualizar_anterior_out<= 1'b1;
-		else
-			na_atualizar_anterior_out<= 1'b0;
-	end
-end
-
-always @(posedge clk or negedge rst_n) begin
-	if (!rst_n) begin
-		na_nova_menor_distancia_out <= 1'b0;
-	end
-	else begin
-		if (ativar || desativar)
-			na_nova_menor_distancia_out <= 1'b1;
-		else if (atualizar & nova_menor_distancia)
-			na_nova_menor_distancia_out <= 1'b1;
-		else
-			na_nova_menor_distancia_out <= 1'b0;
 	end
 end
 

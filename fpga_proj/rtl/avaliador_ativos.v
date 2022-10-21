@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-21 08:44:06
+//  Last Modified : 2022-10-21 14:35:21
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -49,12 +49,10 @@ genvar i;
 // no_ativo
 wire [ADDR_WIDTH-1:0] na_endereco_2d [NUM_NA-1:0];
 wire [DISTANCIA_WIDTH-1:0] na_distancia_2d [NUM_NA-1:0];
-wire [NUM_NA-1:0] na_atualizar_anterior;
 wire [ADDR_WIDTH-1:0] na_anterior_2d [NUM_NA-1:0];
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [NUM_NA-1:0];
 wire [CRITERIO_WIDTH*NUM_NA-1:0] na_criterio_1d;
 wire [NUM_NA-1:0] na_ativo;
-wire [NUM_NA-1:0] na_nova_menor_distancia;
 // gerenciador_ativos
 wire [ADDR_WIDTH-1:0] ga_endereco;
 wire [NUM_NA-1:0] ga_habilitar;
@@ -63,14 +61,11 @@ wire [CUSTO_WIDTH-1:0] ga_menor_vizinho;
 wire [DISTANCIA_WIDTH-1:0] ga_distancia;
 wire ga_atualizar;
 wire ga_desativar;
-// wire ga_ocupado;
 // classificador_ativos
 wire [CRITERIO_WIDTH-1:0] ca_criterio_geral;
 wire ca_pronto;
-// avaliador ativos
-reg aa_atualizar_classificacao;
 //Registers
-
+reg aa_atualizar_classificacao;
 
 //*******************************************************
 //General Purpose Signals
@@ -88,6 +83,22 @@ endgenerate
 //Outputs
 //*******************************************************
 
+assign aa_tem_ativo_out = |na_ativo;
+assign aa_tem_aprovado_out = |aa_aprovado_out;
+
+always @(posedge clk or negedge rst_n) begin
+  if (!rst_n) begin
+    aa_pronto_out <= 1'b0;
+    aa_atualizar_classificacao <= 1'b0;
+  end
+  else begin
+    aa_atualizar_classificacao <= ga_atualizar || ga_desativar;
+    if (atualizar_in || desativar_in)
+      aa_pronto_out <= 1'b0;
+    else if(ca_pronto)
+      aa_pronto_out <= 1'b1;
+  end
+end
 //*******************************************************
 //Instantiations
 //*******************************************************
@@ -145,39 +156,13 @@ generate
       .ga_habilitar_in(ga_habilitar[i]),
       .na_criterio_out(na_criterio_2d[i]),
       .na_distancia_out(na_distancia_2d[i]),
-      .na_atualizar_anterior_out(na_atualizar_anterior[i]),
       .na_anterior_out(na_anterior_2d[i]),
       .na_aprovado_out(aa_aprovado_out[i]),
       .na_endereco_out(na_endereco_2d[i]),
-      .na_ativo_out(na_ativo[i]),
-      .na_nova_menor_distancia_out(na_nova_menor_distancia[i])
+      .na_ativo_out(na_ativo[i])
     );
   end
 endgenerate
-
-assign aa_tem_ativo_out = |na_ativo;
-assign aa_tem_aprovado_out = |aa_aprovado_out;
-// assign aa_atualizar_classificacao = ga_atualizar || ga_desativar;
-// assign aa_atualizar_classificacao = |na_nova_menor_distancia;
-// assign aa_pronto_out = !aa_atualizar_classificacao && ca_pronto && !atualizar_in && !aa_ocupado_out;
-
-
-always @(posedge clk or negedge rst_n) begin
-  if (!rst_n) begin
-    aa_pronto_out <= 1'b0;
-    aa_atualizar_classificacao <= 1'b0;
-  end
-  else begin
-    aa_atualizar_classificacao <= ga_atualizar || ga_desativar;
-    // aa_atualizar_classificacao <= lvv_pronto_in;
-    if (atualizar_in || desativar_in)
-    // if (lvv_pronto_in)
-      aa_pronto_out <= 1'b0;
-    else if(ca_pronto)
-      aa_pronto_out <= 1'b1;
-
-  end
-end
 
 classificar_ativo
 		#(

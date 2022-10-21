@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-21 11:40:26
+//  Last Modified : 2022-10-21 14:34:43
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -53,8 +53,8 @@ module gerenciador_ativos
 localparam COUNT_WIDTH = 3;
 localparam FIDO_DEPTH = NUM_NA;
 localparam FIDO_ADD_WIDTH = $clog2(FIDO_DEPTH);
-//Wires
 genvar i;
+//Wires
 wire [ADDR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
 wire fifo_full;
 wire fifo_almost_full;
@@ -71,7 +71,7 @@ reg escrever_fifo;
 reg [NUM_NA-1:0] fifo_data_in;
 reg init;
 //*******************************************************
-//Flag signals
+//Sinais de controle
 //*******************************************************
 assign ga_buffers_cheios_o = fifo_empty;
 assign ga_ocupado_o = tem_operacao || ga_desativar_out || ga_atualizar_out;
@@ -79,7 +79,7 @@ assign tem_hit = |hit;
 assign tem_operacao = desativar_in || atualizar_in;
 
 //*******************************************************
-//Identificando NA vazios
+//Gerenciando a FIFO que contem os endereços vázios
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -92,7 +92,6 @@ always @(posedge clk or negedge rst_n) begin
             fifo_data_in <= hit;
     end
 end
-
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -124,6 +123,10 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+//*******************************************************
+//Inicializando a fifo com os na livres
+//TODO: Veriricar se é possível remover essa lógica;
+//*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         init <= 1'b1;
@@ -150,12 +153,8 @@ end
 
 //*******************************************************
 //General Purpose Signals
-// Verificando se o endereço se encontra armazenado e ativo, só pode existir um endereço por nó.
+// Verificando se o endereço se encontra armazenado é ativo, só pode existir um endereço por nó.
 // O hit verifica se o endereço recebido está armazenado em um nó ativo.
-// 
-// hit_fifo habilita o sinal correspondente ao valor de saída da fifo
-// 
-// 
 //*******************************************************
 //Convertendo entrada 1d para 2d
 generate
@@ -167,6 +166,7 @@ endgenerate
 
 //*******************************************************
 //Outputs
+// TODO: Verificar se é possível não ter que registrar todos os sinais, apenas os de controle.
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -200,7 +200,6 @@ end
 //*******************************************************
 //Instantiations
 //*******************************************************
-
 syn_fifo 
 #(
     .DATA_WIDTH(NUM_NA),
