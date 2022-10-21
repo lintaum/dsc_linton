@@ -14,11 +14,13 @@ from util.simular_vivado import simular_vivado
 inf = float('inf')
 
 class DijkstraParallel():
-    def __init__(self, num_nos, max_num_vizinhos):
+    def __init__(self, num_nos, max_num_vizinhos, max_bits_custo, max_bits_relacao):
         self.fonte = None
         self.destino = None
         self.num_nos = num_nos
         self.max_num_vizinhos = max_num_vizinhos
+        self.max_bits_custo = max_bits_custo
+        self.max_bits_relacao = max_bits_relacao
         # Criando Blocos
         self.mem_anterior = MemoriaInt(num_nos, 1)
         self.mem_estabelecidos = MemoriaInt(num_nos, 1)
@@ -52,7 +54,13 @@ class DijkstraParallel():
             self.mem_estabelecidos.escrever(no, 0)
             """Repassando as memórias para o LVV"""
             self.lvv.inicializar_mem(self.mem_relacoes, self.mem_estabelecidos)
-        dict_2_vmem(self.mem_relacoes, obstaculos)
+        dict_2_vmem(
+                    dict_mem=self.mem_relacoes,
+                    obstaculos=obstaculos,
+                    max_bits_relacao=self.max_bits_relacao,
+                    max_bits_custo=self.max_bits_custo,
+                    max_relacoes=self.max_num_vizinhos
+                    )
 
     def calcular_caminho(self, fonte, destino):
         # sinais de debug
@@ -137,10 +145,14 @@ def main(num_nos=10, debug=False, grafico=False, num_onstaculos=10):
     # num_nos = 5
     fonte = 0
     destino = num_nos-1
-
+    max_bits_relacao = num_nos.bit_length()
+    peso_maximo = 15
+    distancia_width = (peso_maximo*num_nos).bit_length()
+    max_num_vizinhos = 8
+    max_bits_custo = peso_maximo.bit_length()
     """Gerando o grafo"""
-    top = DijkstraParallel(num_nos=num_nos, max_num_vizinhos=6)
-    graph_gen = GraphGen(max_weigth=15)
+    top = DijkstraParallel(num_nos=num_nos, max_num_vizinhos=max_num_vizinhos, max_bits_relacao=max_bits_relacao, max_bits_custo=max_bits_custo)
+    graph_gen = GraphGen(max_weigth=peso_maximo)
     graph_gen.adjacent_lis(nodes=num_nos)
 
     """Definindo os obstáculos"""
@@ -161,7 +173,11 @@ def main(num_nos=10, debug=False, grafico=False, num_onstaculos=10):
                          fonte=fonte,
                          destino=destino,
                          menor_caminho=menor_caminho,
-                         custo=custo, max_bits_relacao=10,
+                         custo=custo,
+                         max_bits_relacao=max_bits_relacao,
+                         custo_width=max_bits_custo,
+                         max_vizinhos=max_num_vizinhos,
+                         distancia_width=distancia_width,
                          max_ativos=top.avaliador_ativos.max_ocupacao
                      )
     return menor_caminho, custo

@@ -7,8 +7,13 @@ def round_to_bin(data, max_bits):
     return data
 
 
-def dict_2_vmem(dict_mem, obstaculos, max_bits_relacao=10, max_bits_custo=4, nome_arquivo_relacao="../mem_relacoes.bin",
-                nome_arquivo_obstaculo="../mem_obstaculo.bin", max_relacoes=8):
+def dict_2_vmem(dict_mem,
+                obstaculos,
+                max_bits_relacao=10,
+                max_bits_custo=4,
+                nome_arquivo_relacao="../mem_relacoes.bin",
+                nome_arquivo_obstaculo="../mem_obstaculo.bin",
+                max_relacoes=8):
     """Converte uma memória em python para o formato de importação verilog"""
     relacao_str = ''
     obstaculo_str = ''
@@ -59,16 +64,25 @@ def salvar_param_sim(**kwargs):
         text_file.write(f"`define ADDR_WIDTH {kwargs['max_bits_relacao']}\n")
 
     if 'fonte' in kwargs:
-        text_file.write(f"`define FONTE {max_bits_relacao}'d{kwargs['fonte']}\n")
+        text_file.write(f"`define FONTE {32}'d{kwargs['fonte']}\n")
 
     if 'destino' in kwargs:
-        text_file.write(f"`define DESTINO {max_bits_relacao}'d{kwargs['destino']}\n")
+        text_file.write(f"`define DESTINO {32}'d{kwargs['destino']}\n")
 
     if 'custo' in kwargs:
-        text_file.write(f"`define CUSTO_CAMINHO {max_bits_relacao}'d{kwargs['custo']}\n")
+        text_file.write(f"`define CUSTO_CAMINHO {32}'d{kwargs['custo']}\n")
+
+    if 'custo_width' in kwargs:
+        text_file.write(f"`define CUSTO_WIDTH {32}'d{kwargs['custo_width']}\n")
+
+    if 'max_vizinhos' in kwargs:
+        text_file.write(f"`define MAX_VIZINHOS {32}'d{kwargs['max_vizinhos']}\n")
+
+    if 'distancia_width' in kwargs:
+        text_file.write(f"`define DISTANCIA_WIDTH {32}'d{kwargs['distancia_width']}\n")
 
     if 'max_ativos' in kwargs:
-        text_file.write(f"`define MAX_ATIVOS {max_bits_relacao}'d{kwargs['max_ativos']}\n")
+        text_file.write(f"`define MAX_ATIVOS {32}'d{kwargs['max_ativos']}\n")
 
     if 'menor_caminho' in kwargs:
         texto = "`define MENOR_CAMINHO {"
@@ -76,9 +90,9 @@ def salvar_param_sim(**kwargs):
         for relacao in kwargs['menor_caminho']:
             count += 1
             if count < len(kwargs['menor_caminho']):
-                texto = texto + f"{max_bits_relacao}'d{relacao}, "
+                texto = texto + f"{32}'d{relacao}, "
             else:
-                texto = texto + f"{max_bits_relacao}'d{relacao}"
+                texto = texto + f"{32}'d{relacao}"
         texto = texto + "}"
 
         text_file.write(f"`define TAMANHO_CAMINHO {count}\n")

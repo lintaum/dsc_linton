@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-21 09:23:29
+//  Last Modified : 2022-10-21 10:06:32
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -26,11 +26,10 @@ module top_tb
 localparam ADDR_WIDTH = `ADDR_WIDTH;
 localparam [`TAMANHO_CAMINHO-1:0][ADDR_WIDTH-1:0] MENOR_CAMINHO = `MENOR_CAMINHO;
 localparam CUSTO_CAMINHO = `CUSTO_CAMINHO;
-localparam CUSTO_WIDTH = 4;
-localparam MAX_VIZINHOS = 8;
-localparam DISTANCIA_WIDTH = 10;
+localparam CUSTO_WIDTH = `CUSTO_WIDTH;
+localparam MAX_VIZINHOS = `MAX_VIZINHOS;
+localparam DISTANCIA_WIDTH = `DISTANCIA_WIDTH;
 localparam CRITERIO_WIDTH = DISTANCIA_WIDTH + 1;
-localparam DATA_WIDTH = 8;
 localparam UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH;
 localparam RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH);
 localparam NUM_NA = `MAX_ATIVOS;
@@ -179,7 +178,6 @@ top
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
             .CRITERIO_WIDTH(CRITERIO_WIDTH),
             .CUSTO_WIDTH(CUSTO_WIDTH),
-            .DATA_WIDTH(DATA_WIDTH),
             .RELACOES_DATA_WIDTH(RELACOES_DATA_WIDTH),
             .NUM_NA(NUM_NA)
         )

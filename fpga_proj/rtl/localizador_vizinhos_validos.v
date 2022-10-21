@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-21 09:05:28
+//  Last Modified : 2022-10-21 09:50:56
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -25,8 +25,7 @@ module localizador_vizinhos_validos
 			parameter NUM_NA = 4,
 	        parameter CUSTO_WIDTH = 4,
 	        parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
-			parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
-	        parameter DATA_WIDTH = 4
+			parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH)
 		)
 		(/*autoport*/
 			input clk,
