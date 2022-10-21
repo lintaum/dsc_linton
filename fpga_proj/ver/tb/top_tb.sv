@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-21 11:43:29
+//  Last Modified : 2022-10-21 13:31:08
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -114,7 +114,7 @@ task verificar();
             $display("Estabelecido Addr = %0d", top_u0.lvv_estabelecidos_write_addr);
             // $stop();
          end
-         if (top_u0.gerenciador_memoria_anterior_u0.pronto) begin
+         if (top_u0.gerenciador_memoria_anterior_u0.pronto_out) begin
             $display("Terminou de gerar o caminho", );
             $stop();
          end

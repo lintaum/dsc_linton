@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-21 11:43:56
+//  Last Modified : 2022-10-21 13:28:40
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,8 +19,8 @@ module top
             parameter CUSTO_WIDTH = 4,
             // parameter DATA_WIDTH = 8,
             parameter MAX_VIZINHOS = 8,
-            parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
             parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
+            parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
             parameter NUM_NA = 8
         )
         (/*autoport*/
@@ -28,7 +28,9 @@ module top
             input rst_n,
             input [ADDR_WIDTH-1:0] top_addr_fonte_in,
             input [ADDR_WIDTH-1:0] top_addr_destino_in,
-            input top_wr_fonte_in
+            input top_wr_fonte_in,
+            output [ADDR_WIDTH-1:0] gma_read_data_out,
+            output gma_pronto_out
         );
 //*******************************************************
 //Internal
@@ -130,9 +132,8 @@ gerenciador_memoria_anterior
             .write_en_in(lvv_estabelecidos_write_en),
             .write_data_in(lvv_anterior_data),
             .write_addr_in(lvv_estabelecidos_write_addr),
-            // .read_en_in(),
-            // .read_addr_in(),
-            .read_data_out()
+            .read_data_out(gma_read_data_out),
+            .pronto_out(gma_pronto_out)
         );
 
 gerenciador_estabelecidos

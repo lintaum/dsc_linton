@@ -32,15 +32,15 @@ localparam MEM_SIZE = 2**ADDR_WIDTH;
 reg [DATA_WIDTH-1:0] mem [0:MEM_SIZE-1];
 // reg [DATA_WIDTH-1:0] mem [0:128];
 
-always @(posedge clk, negedge rst_n) begin : proc_mem
-	if(!rst_n) begin
+always @(posedge clk) begin : proc_mem
+	//if(!rst_n) begin
 		// for (int i = 0; i < MEM_SIZE; i++) begin
 		// 	mem[i] <= {DATA_WIDTH{1'b0}};
 		// end
-	end else begin
+	//end else begin
 		if (write_en_i)
 			mem[write_addr_i] <= data_i;
-	end
+	//end
 end
 
 assign data_o = mem[read_addr_i];

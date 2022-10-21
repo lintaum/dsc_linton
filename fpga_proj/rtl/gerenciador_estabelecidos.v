@@ -31,7 +31,7 @@ reg [DATA_WIDTH-1:0] mem [0:MEM_SIZE-1];
 //General Purpose Signals
 //*******************************************************
 
-always @(posedge clk or negedge rst_n) begin
+always @(posedge clk) begin
     if (!rst_n) begin
        for (i = 0; i < MEM_SIZE; i = i + 1)begin
            mem[i] <= {DATA_WIDTH{1'b0}};

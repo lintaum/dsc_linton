@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_memoria_anterior.v
 //  Created On    : 2022-10-04 09:53:21
-//  Last Modified : 2022-10-18 14:50:25
+//  Last Modified : 2022-10-21 13:27:41
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -27,7 +27,7 @@ module gerenciador_memoria_anterior
 			// input read_en_in,
 			// input [ADDR_WIDTH-1:0] read_addr_in,
 			output reg [ADDR_WIDTH-1:0] read_data_out,
-			output reg pronto
+			output reg pronto_out
 		);
 
 
@@ -75,13 +75,13 @@ end
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
-		pronto <= 1'b0;
+		pronto_out <= 1'b0;
 	end
 	else begin
 		if (!init)
-			pronto <= 1'b0;
+			pronto_out <= 1'b0;
 		else if (ram_data == top_fonte_in)
-			pronto <= 1'b1;
+			pronto_out <= 1'b1;
 	end
 end
 //*******************************************************
