@@ -90,9 +90,9 @@ def salvar_param_sim(**kwargs):
         for relacao in kwargs['menor_caminho']:
             count += 1
             if count < len(kwargs['menor_caminho']):
-                texto = texto + f"{32}'d{relacao}, "
+                texto = texto + f"{max_bits_relacao}'d{relacao}, "
             else:
-                texto = texto + f"{32}'d{relacao}"
+                texto = texto + f"{max_bits_relacao}'d{relacao}"
         texto = texto + "}"
 
         text_file.write(f"`define TAMANHO_CAMINHO {count}\n")

@@ -201,7 +201,7 @@ if __name__ == '__main__':
     grafico = True
     teste = True
     # grafico+ = False
-    num_nos = 128
+    num_nos = 127
     inicio = 40
     tem_obstaculo = True
     # tem_obstaculo = False

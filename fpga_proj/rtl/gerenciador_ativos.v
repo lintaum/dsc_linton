@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-20 15:38:32
+//  Last Modified : 2022-10-21 11:31:47
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -49,12 +49,6 @@ module gerenciador_ativos
 //Internal
 //*******************************************************
 //Local Parameters
-localparam STATE_WIDTH = 3;
-localparam ST_IDLE = 0;
-localparam ST_DESATIVAR = 1;
-localparam ST_ATUALIZAR = 2;
-localparam ST_PROCURANDO = 3;
-localparam ST_ENCONTROU = 4;
 localparam COUNT_WIDTH = 3;
 localparam FIDO_DEPTH = NUM_NA;
 localparam FIDO_ADD_WIDTH = $clog2(FIDO_DEPTH);
@@ -66,95 +60,31 @@ wire fifo_almost_full;
 wire fifo_empty;
 wire fifo_almost_empty;
 wire [NUM_NA-1:0] fifo_data_out;
-wire tem_vazio;
 wire [NUM_NA-1:0] hit;
 wire [NUM_NA-1:0] hit_fifo;
 wire tem_hit;
+wire tem_operacao;
 //Registers
-reg [STATE_WIDTH-1:0] state, next_state;
 reg [NUM_NA-1:0] count;
 reg ler_fifo;
 reg escrever_fifo;
 reg [NUM_NA-1:0] fifo_data_in;
 reg ga_desativar_reg, ga_atualizar_reg;
+reg init;
 //*******************************************************
 //Flag signals
 //*******************************************************
 assign ga_buffers_cheios_o = fifo_empty;
-assign ga_ocupado_o = state != ST_IDLE;
-assign tem_vazio = !fifo_empty;
+assign ga_ocupado_o = tem_operacao;
 assign tem_hit = |hit;
+assign tem_operacao = desativar_in || atualizar_in;
 
-//*******************************************************
-//FSM
-//*******************************************************
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        state <= ST_IDLE;
-    end
-    else begin
-        state <= next_state;
-    end
-end
-
-// Essa FSM pode ser melhorada
-always @(*) begin
-    next_state = state;
-    case (state)
-        ST_IDLE: begin
-            if (desativar_in)
-                next_state = ST_DESATIVAR;
-            else if (atualizar_in)
-                next_state = ST_ATUALIZAR;
-        end
-        ST_DESATIVAR:
-            // if (tem_hit)
-                next_state = ST_ENCONTROU;
-        ST_ATUALIZAR:
-            if (tem_hit)
-                next_state = ST_ENCONTROU;
-            else
-                next_state = ST_PROCURANDO;
-        ST_PROCURANDO: begin
-            if (tem_vazio)
-                next_state = ST_ENCONTROU;
-        end 
-        ST_ENCONTROU: next_state = ST_IDLE;
-    endcase
-end
-
-//*******************************************************
-//Registrando as entradas
-//*******************************************************
-always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        ga_desativar_reg <= 1'b0;
-        ga_atualizar_reg <= 1'b0;
-        ga_endereco_out <= {ADDR_WIDTH{1'b0}};
-        ga_anterior_out <= {ADDR_WIDTH{1'b0}};
-        ga_menor_vizinho_out <= {CUSTO_WIDTH{1'b0}};
-        ga_distancia_out <= {DISTANCIA_WIDTH{1'b0}};
-    end
-    else begin
-        if (state == ST_IDLE) begin
-            ga_endereco_out <= endereco_in;
-            ga_anterior_out <= anterior_in;
-            ga_desativar_reg <= desativar_in;
-            ga_atualizar_reg <= atualizar_in;
-            ga_menor_vizinho_out <= menor_vizinho_in;
-            ga_distancia_out <= distancia_in;
-        end
-    end
-end
-wire achou_desocupado;
-assign achou_desocupado = na_ativo_in[count] == 1'b0;
 //*******************************************************
 //Identificando NA vazios
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         fifo_data_in <= 1;
-        // escrever_fifo <= 1'b0;
     end
     else begin
         if (init)
@@ -167,16 +97,17 @@ end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        escrever_fifo <= 1'b0;
-    end
-    // if (init && !fifo_almost_full)
-    if (init && count < NUM_NA)
-        escrever_fifo <= 1'b1;
-    else if (ga_desativar_out) begin
         escrever_fifo <= 1'b1;
     end
     else begin
-        escrever_fifo <= 1'b0;
+        if (init && count < NUM_NA)
+            escrever_fifo <= 1'b1;
+        else if (ga_desativar_out) begin
+            escrever_fifo <= 1'b1;
+        end
+        else begin
+            escrever_fifo <= 1'b0;
+        end
     end
 end
 
@@ -185,7 +116,7 @@ always @(posedge clk or negedge rst_n) begin
         ler_fifo <= 1'b0;
     end
     else begin
-        if (state == ST_PROCURANDO) begin
+        if (atualizar_in && !tem_hit) begin
             ler_fifo <= 1'b1;
         end
         else begin
@@ -193,9 +124,6 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
-
-reg liberar_escita_fifo;
-reg init;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -230,16 +158,10 @@ end
 // 
 // 
 //*******************************************************
-generate
-    for (i = 0; i < NUM_NA; i = i + 1)begin
-        assign hit[i] = ((na_endereco_2d[i] == ga_endereco_out) && na_ativo_in[i]) ? 1'b1: 1'b0;
-    end
-endgenerate
-// end
-
 //Convertendo entrada 1d para 2d
 generate
-    for (i = 0; i < NUM_NA; i = i + 1) begin:convert_dimension_in
+    for (i = 0; i < NUM_NA; i = i + 1)begin
+        assign hit[i] = ((na_endereco_2d[i] == endereco_in) && na_ativo_in[i]) ? 1'b1: 1'b0;
         assign na_endereco_2d[i] = na_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
     end
 endgenerate
@@ -251,31 +173,31 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         ga_habilitar_out <= {NUM_NA{1'b0}};
     end
-    else if (state == ST_ENCONTROU) begin
+    else 
         if (tem_hit)
             ga_habilitar_out <= hit;
         else
             ga_habilitar_out <= fifo_data_out;
-    end
-    else
-        ga_habilitar_out <= {NUM_NA{1'b0}};
 end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        ga_atualizar_out <= 1'b0;
         ga_desativar_out <= 1'b0;
-    end
-    else if (state == ST_ENCONTROU) begin
-        ga_atualizar_out <= ga_atualizar_reg;
-        ga_desativar_out <= ga_desativar_reg;
+        ga_atualizar_out <= 1'b0;
+        ga_endereco_out <= {ADDR_WIDTH{1'b0}};
+        ga_anterior_out <= {ADDR_WIDTH{1'b0}};
+        ga_menor_vizinho_out <= {CUSTO_WIDTH{1'b0}};
+        ga_distancia_out <= {DISTANCIA_WIDTH{1'b0}};
     end
     else begin
-        ga_atualizar_out <= 1'b0;
-        ga_desativar_out <= 1'b0;
+        ga_endereco_out <= endereco_in;
+        ga_anterior_out <= anterior_in;
+        ga_desativar_out <= desativar_in;
+        ga_atualizar_out <= atualizar_in;
+        ga_menor_vizinho_out <= menor_vizinho_in;
+        ga_distancia_out <= distancia_in;
     end
 end
-
 //*******************************************************
 //Instantiations
 //*******************************************************
