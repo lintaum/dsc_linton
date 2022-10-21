@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-21 08:46:03
+//  Last Modified : 2022-10-21 11:43:56
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -17,7 +17,7 @@ module top
             parameter DISTANCIA_WIDTH = 6,
             parameter CRITERIO_WIDTH = DISTANCIA_WIDTH + 1,
             parameter CUSTO_WIDTH = 4,
-            parameter DATA_WIDTH = 8,
+            // parameter DATA_WIDTH = 8,
             parameter MAX_VIZINHOS = 8,
             parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
             parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
@@ -242,8 +242,8 @@ localizador_vizinhos_validos
             .NUM_NA(NUM_NA),
             .UMA_RELACAO_WIDTH(UMA_RELACAO_WIDTH),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
-            .CUSTO_WIDTH(CUSTO_WIDTH),
-            .DATA_WIDTH(DATA_WIDTH)
+            .CUSTO_WIDTH(CUSTO_WIDTH)
+            // .DATA_WIDTH(DATA_WIDTH)
         )
         localizador_vizinhos_validos_u0
         (/*autoport*/
