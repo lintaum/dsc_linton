@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-21 13:28:40
+//  Last Modified : 2022-10-24 09:27:12
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -11,17 +11,19 @@
 //
 //
 //==================================================================================================
+
+`include "/home/linton/proj_dsc/dsc/defines.vh"
+
 module top
         #(
-            parameter ADDR_WIDTH = 10,
-            parameter DISTANCIA_WIDTH = 6,
+            parameter ADDR_WIDTH = `ADDR_WIDTH,
+            parameter DISTANCIA_WIDTH = `DISTANCIA_WIDTH,
             parameter CRITERIO_WIDTH = DISTANCIA_WIDTH + 1,
-            parameter CUSTO_WIDTH = 4,
-            // parameter DATA_WIDTH = 8,
-            parameter MAX_VIZINHOS = 8,
+            parameter CUSTO_WIDTH = `CUSTO_WIDTH,
+            parameter MAX_VIZINHOS = `MAX_VIZINHOS,
             parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
             parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
-            parameter NUM_NA = 8
+            parameter NUM_NA = `MAX_ATIVOS
         )
         (/*autoport*/
             input clk,
@@ -29,8 +31,13 @@ module top
             input [ADDR_WIDTH-1:0] top_addr_fonte_in,
             input [ADDR_WIDTH-1:0] top_addr_destino_in,
             input top_wr_fonte_in,
+            //lendo os resultados
             output [ADDR_WIDTH-1:0] gma_read_data_out,
-            output gma_pronto_out
+            output gma_pronto_out,
+            //escrevendo os obstaculos
+            input obstaculos_wr_enable_in,
+            input [ADDR_WIDTH-1:0] obstaculos_wr_addr_in,
+            input obstaculos_wr_data_in
         );
 //*******************************************************
 //Internal
@@ -169,7 +176,10 @@ gerenciador_memorias_acesso_externo
             .relacoes_rd_data_out(gma_relacoes_rd_data),
             .obstaculos_rd_enable_in(lvv_obstaculos_rd_enable),
             .obstaculos_rd_addr_in(lvv_obstaculos_rd_addr),
-            .obstaculos_rd_data_out(gma_obstaculos_rd_data)
+            .obstaculos_rd_data_out(gma_obstaculos_rd_data),
+            .obstaculos_wr_enable_in(obstaculos_wr_enable_in),
+            .obstaculos_wr_addr_in(obstaculos_wr_addr_in),
+            .obstaculos_wr_data_in(obstaculos_wr_data_in)
         );
 
 controlador_maquina_estados

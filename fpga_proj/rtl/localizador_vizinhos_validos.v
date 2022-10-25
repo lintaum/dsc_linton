@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-24 09:01:51
+//  Last Modified : 2022-10-25 08:49:56
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -73,9 +73,6 @@ module localizador_vizinhos_validos
 //Local Parameters
 genvar i;
 localparam COUNT_WIDTH = 10;
-// endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v
-// localparam FIFO_DATA_WIDTH = ADDR_WIDTH + CUSTO_WIDTH + ADDR_WIDTH + DISTANCIA_WIDTH;
-// localparam FIDO_ADDR_WIDTH = 8;
 localparam COUNT_VIZINHO_WIDTH = 3;
 localparam STATE_WIDTH = 4;
 localparam ST_IDLE = 4'd0,
@@ -104,7 +101,6 @@ wire [CUSTO_WIDTH-1:0] relacoes_2d_custo_in [0:MAX_VIZINHOS-1];
 wire [ADDR_WIDTH-1:0] relacoes_2d_addr_in [0:MAX_VIZINHOS-1];
 reg lvv_pronto;
 //Registers
-reg [COUNT_WIDTH-1:0] count_aprovados;
 reg [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data_ap;
 reg [COUNT_VIZINHO_WIDTH-1:0] count_vizinho;
 reg [STATE_WIDTH-1:0] state, next_state;
@@ -120,7 +116,8 @@ reg [DISTANCIA_WIDTH-1:0] nova_distancia;
 //General Purpose Signals
 //*******************************************************
 assign endereco_vizinho_atual = relacoes_2d_addr_ap[count_vizinho];
-assign no_aprovado = aa_aprovado_in[count_aprovados] == 1'b1;
+assign no_aprovado = aa_aprovado_in[proximo_aprovado] == 1'b1;
+assign no_aprovado_prox = aa_aprovado_in[proximo_aprovado] == 1'b1;
 assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
 assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
 assign lvv_pronto_out = state == ST_FINALIZAR;
@@ -138,6 +135,39 @@ generate
 		assign relacoes_2d_addr_in[i] = relacoes_2d_in[i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
     end
 endgenerate
+//*******************************************************
+//analisando entrada
+//*******************************************************
+reg [NUM_NA-1:0] aprovados_reg;
+reg [ADDR_WIDTH-1:0] proximo_aprovado;
+wire tem_aprovado;
+
+assign tem_aprovado = aprovados_reg != 0;
+
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		proximo_aprovado <= 0;
+	end
+	else begin
+		for (integer w = 0; w < NUM_NA; w = w +1) begin
+			if (aprovados_reg[w]==1)
+				proximo_aprovado <= w;
+		end
+	end
+end
+
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		aprovados_reg <= 0;
+	end
+	else begin
+		if (state==ST_IDLE || (state == ST_ESTABILIZAR && !tem_aprovado))
+			aprovados_reg <= aa_aprovado_in;
+		
+		if (lvv_estabelecidos_write_en_out || (state == ST_EXPANDIR_VIZINHOS && next_state ==ST_ENCONTRAR_APROVADO))
+			aprovados_reg[proximo_aprovado] <= 1'b0;
+	end
+end
 
 //*******************************************************
 //registrando as relações de um nó aprovado
@@ -170,9 +200,10 @@ always @(*) begin
 	lvv_estabelecidos_write_en_out = 1'b0;
 	lvv_estabelecidos_read_en_out = 1'b0;
 	lvv_estabelecidos_write_data_out = 1'b0;
-	lvv_estabelecidos_write_addr_out = aa_endereco_2d[count_aprovados];
 	lvv_estabelecidos_read_addr_out = endereco_w;
-	if (state == ST_ESTABILIZAR && no_aprovado && !lvv_desativar_out && !aa_ocupado_in) begin
+	lvv_estabelecidos_write_addr_out = aa_endereco_2d[proximo_aprovado];
+	if (state == ST_ESTABILIZAR && !lvv_desativar_out && !aa_ocupado_in) begin
+	// if (state == ST_ESTABILIZAR && no_aprovado && !lvv_desativar_out && !aa_ocupado_in) begin
 		lvv_estabelecidos_write_en_out = 1'b1;
 		lvv_estabelecidos_write_data_out = 1'b1;
 	end
@@ -182,12 +213,12 @@ always @(*) begin
 end
 
 always @(*) begin
-	lvv_anterior_data_out = aa_anterior_data_2d[count_aprovados];
+	lvv_anterior_data_out = aa_anterior_data_2d[proximo_aprovado];
 end
 
 always @(*) begin
 	lvv_relacoes_rd_enable_out = 1'b0;
-	lvv_relacoes_rd_addr_out = aa_endereco_2d[count_aprovados];
+	lvv_relacoes_rd_addr_out = aa_endereco_2d[proximo_aprovado];
 	if (state == ST_ENCONTRAR_VIZINHOS) begin
 		lvv_relacoes_rd_enable_out = 1'b1;
 	end
@@ -210,24 +241,9 @@ always @(*) begin
 	end
 end
 
-
-
 //*******************************************************
 // Contadores
 //*******************************************************
-always @(posedge clk or negedge rst_n) begin
-   if (!rst_n) begin
-      count_aprovados <= {COUNT_WIDTH{1'b0}};
-   end
-   else begin
-      if (state == ST_IDLE || (state == ST_ESTABILIZAR && next_state == ST_ENCONTRAR_APROVADO)) begin
-         count_aprovados <= {COUNT_WIDTH{1'b0}};
-      end
-      else if (next_state == ST_ENCONTRAR_APROVADO || next_state == ST_ESTABILIZAR && !lvv_desativar_out && !aa_ocupado_in)
-         count_aprovados <= count_aprovados + 1'b1;
-   end
-end
-
 // Contador dos vizinhos de um nó
 always @(posedge clk or negedge rst_n) begin
    if (!rst_n) begin
@@ -276,13 +292,13 @@ always @(*) begin
                 next_state = ST_ESTABILIZAR;
         // Esdtabilizandos os nós aprovados
         ST_ESTABILIZAR:
-	        if (count_aprovados == NUM_NA-1 && !lvv_desativar_out && !aa_ocupado_in)
+	        if (!tem_aprovado)
 	            next_state = ST_ENCONTRAR_APROVADO;
 	    //Identificando os aprovados
         ST_ENCONTRAR_APROVADO:
-            if (no_aprovado)
+            if (tem_aprovado)
                 next_state = ST_ENCONTRAR_VIZINHOS;
-            else if (count_aprovados == NUM_NA-1)
+            else
             	next_state = ST_FINALIZAR;
         // Encontrando os vizinhos de um nó aprovado
         ST_ENCONTRAR_VIZINHOS:
@@ -307,7 +323,7 @@ always @(*) begin
         	if (count_vizinho != MAX_VIZINHOS-1)
         		next_state = ST_ANALISAR_VIZINHO;
         	else
-        		if (count_aprovados == NUM_NA-1)
+        		if (!tem_aprovado)
         			next_state = ST_FINALIZAR;
         		else
         			next_state = ST_ENCONTRAR_APROVADO;
@@ -328,8 +344,8 @@ always @(*) begin
 	
 	menor_vizinho = relacoes_2d_custo_in[count_sub_vizinho-1];
 	
-	aprovado = aa_endereco_2d[count_aprovados];
-	distancia_v = aa_distancia_2d[count_aprovados];
+	aprovado = aa_endereco_2d[proximo_aprovado];
+	distancia_v = aa_distancia_2d[proximo_aprovado];
 	
 	nova_distancia = distancia_v + custo_vw;
 end

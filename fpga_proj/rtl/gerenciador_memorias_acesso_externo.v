@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_memorias_acesso_externo.v
 //  Created On    : 2022-10-06 07:29:50
-//  Last Modified : 2022-10-06 08:15:07
+//  Last Modified : 2022-10-24 09:09:40
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,13 +19,17 @@ module gerenciador_memorias_acesso_externo
 		(/*autoport*/
 			input clk,
 			input rst_n,
-
+			//lendo relações
 			input relacoes_rd_enable_in,
 			input [ADDR_WIDTH-1:0] relacoes_rd_addr_in,
 			output [RELACOES_DATA_WIDTH-1:0] relacoes_rd_data_out,
-
+			//escrevendo obstaculos
+			input obstaculos_wr_enable_in,
+			input [ADDR_WIDTH-1:0] obstaculos_wr_addr_in,
+			input obstaculos_wr_data_in,
+			//lendo obstaculos
 			input obstaculos_rd_enable_in,
-			input [ADDR_WIDTH-1:0]obstaculos_rd_addr_in,
+			input [ADDR_WIDTH-1:0] obstaculos_rd_addr_in,
 			output obstaculos_rd_data_out
 		);
 //*******************************************************
@@ -74,11 +78,11 @@ dual_port_ram
 	(
 		.clk(clk),
 		.rst_n(rst_n),
-		.data_i(),
-		.write_en_i(1'b0),
+		.data_i(obstaculos_wr_data_in),
+		.write_en_i(obstaculos_wr_enable_in),
 		.read_en_i(obstaculos_rd_enable_in),
 		.read_addr_i(obstaculos_rd_addr_in),
-		.write_addr_i(),
+		.write_addr_i(obstaculos_wr_addr_in),
 		.data_o(obstaculos_rd_data_out)
 	);
 endmodule

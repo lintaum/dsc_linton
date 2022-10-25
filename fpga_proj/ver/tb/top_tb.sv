@@ -147,6 +147,7 @@ task verificar_distancia();
                end
                else
                   $display("Distância Aprovada: = %0d", top_u0.avaliador_ativos_u0.na_distancia_2d[count2]);
+                  $stop();
             end
          end
       end
