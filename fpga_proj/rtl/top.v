@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-24 09:27:12
+//  Last Modified : 2022-10-25 09:57:24
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -51,7 +51,8 @@ wire cme_aguardando,
      cme_iniciar,
      cme_expandir,
      cme_atualizar_buffer,
-     cme_construir_caminho;
+     cme_construir_caminho,
+     cme_atualizar_classificacao;
 
 //sinais de saida do buffer aa
 wire [NUM_NA-1:0] buff_aa_aprovado;
@@ -198,6 +199,7 @@ controlador_maquina_estados
             .caminho_pronto_out(cme_caminho_pronto),
             .iniciar_out(cme_iniciar),
             .expandir_out(cme_expandir),
+            .atualizar_classificacao_out(cme_atualizar_classificacao),
             .atualizar_buffer_out(cme_atualizar_buffer),
             .construir_caminho_out(cme_construir_caminho)
         );
@@ -222,6 +224,7 @@ avaliador_ativos
             .menor_vizinho_in(menor_vizinho_mix),
             .distancia_in(distancia_mix),
             .anterior_in(lvv_anterior),
+            .cme_atualizar_classificacao_in(cme_atualizar_classificacao),
             .aa_aprovado_out(aa_aprovado),
             .aa_endereco_out(aa_endereco),
             .aa_distancia_out(aa_distancia),

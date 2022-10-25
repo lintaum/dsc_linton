@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : controlador_maquina_estados.v
 //  Created On    : 2022-10-06 08:19:57
-//  Last Modified : 2022-10-19 14:23:19
+//  Last Modified : 2022-10-25 10:06:33
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -28,6 +28,7 @@ module controlador_maquina_estados
             output iniciar_out,
             output reg expandir_out,
             output atualizar_buffer_out,
+            output atualizar_classificacao_out,
             output construir_caminho_out
 		);
 //*******************************************************
@@ -79,7 +80,8 @@ always @(*) begin
                     else
                         next_state = ST_CONSTRUIR_CAMINHO;
             ST_ATUALIZAR_BUFFER:
-                next_state = ST_EXPANDIR_ATUALIZAR;
+                if (aa_pronto_in)
+                    next_state = ST_EXPANDIR_ATUALIZAR;
             ST_EXPANDIR_ATUALIZAR:
                 // Encontra os vizizinhos de um nó e atualiza no AA
                 if (lvv_pronto_in)
@@ -99,9 +101,9 @@ end
 assign aguardando_out = state == ST_IDLE;
 assign caminho_pronto_out = state == ST_PRONTO;
 assign iniciar_out = state == ST_INICIALIZAR;
-// assign expandir_out = state == ST_EXPANDIR_ATUALIZAR;
 assign construir_caminho_out = state == ST_CONSTRUIR_CAMINHO;
-assign atualizar_buffer_out = state == ST_TEM_ATIVO && aa_pronto_in;
+assign atualizar_buffer_out = state == ST_ATUALIZAR_BUFFER && aa_pronto_in;
+assign atualizar_classificacao_out = state == ST_TEM_ATIVO || iniciar_in;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

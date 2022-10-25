@@ -110,6 +110,7 @@ class DijkstraParallel():
                 if self.mem_estabelecidos.ler(endereco_w) == 0:
                     num_passo3 += 1
                     distancia_vw = distancia_v + custo_vw
+                    print(f"Atualizar Nó {endereco_w}, distancia {distancia_vw}, anterior {aprovado}")
                     if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
                         self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
                                                                 endereco=endereco_w,
@@ -200,9 +201,9 @@ if __name__ == '__main__':
     teste = False
     grafico = True
     teste = True
-    grafico= False
-    num_nos = 80
-    inicio = 20
+    # grafico= False
+    num_nos = 39
+    inicio = 11
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True
