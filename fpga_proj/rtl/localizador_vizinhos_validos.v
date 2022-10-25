@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-25 08:49:56
+//  Last Modified : 2022-10-25 15:11:27
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -99,8 +99,9 @@ wire [ADDR_WIDTH-1:0] relacoes_2d_addr_ap [0:MAX_VIZINHOS-1];
 wire [UMA_RELACAO_WIDTH-1:0] relacoes_2d_in [0:MAX_VIZINHOS-1];
 wire [CUSTO_WIDTH-1:0] relacoes_2d_custo_in [0:MAX_VIZINHOS-1];
 wire [ADDR_WIDTH-1:0] relacoes_2d_addr_in [0:MAX_VIZINHOS-1];
-reg lvv_pronto;
+wire tem_aprovado;
 //Registers
+reg lvv_pronto;
 reg [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data_ap;
 reg [COUNT_VIZINHO_WIDTH-1:0] count_vizinho;
 reg [STATE_WIDTH-1:0] state, next_state;
@@ -111,6 +112,8 @@ reg [CUSTO_WIDTH-1:0] menor_vizinho;
 reg [ADDR_WIDTH-1:0] aprovado;
 reg [DISTANCIA_WIDTH-1:0] distancia_v;
 reg [DISTANCIA_WIDTH-1:0] nova_distancia;
+reg [NUM_NA-1:0] aprovados_reg;
+reg [ADDR_WIDTH-1:0] proximo_aprovado;
 
 //*******************************************************
 //General Purpose Signals
@@ -121,6 +124,7 @@ assign no_aprovado_prox = aa_aprovado_in[proximo_aprovado] == 1'b1;
 assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
 assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
 assign lvv_pronto_out = state == ST_FINALIZAR;
+assign tem_aprovado = aprovados_reg != 0;
 //*******************************************************
 // Desempacotando leitura de relações de um no
 //*******************************************************
@@ -138,23 +142,20 @@ endgenerate
 //*******************************************************
 //analisando entrada
 //*******************************************************
-reg [NUM_NA-1:0] aprovados_reg;
-reg [ADDR_WIDTH-1:0] proximo_aprovado;
-wire tem_aprovado;
-
-assign tem_aprovado = aprovados_reg != 0;
-
+integer w;
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		proximo_aprovado <= 0;
 	end
 	else begin
-		for (integer w = 0; w < NUM_NA; w = w +1) begin
+		proximo_aprovado <= 0;
+		for (w = 0; w < NUM_NA; w = w +1) begin
 			if (aprovados_reg[w]==1)
 				proximo_aprovado <= w;
 		end
 	end
 end
+
 
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
@@ -203,7 +204,6 @@ always @(*) begin
 	lvv_estabelecidos_read_addr_out = endereco_w;
 	lvv_estabelecidos_write_addr_out = aa_endereco_2d[proximo_aprovado];
 	if (state == ST_ESTABILIZAR && !lvv_desativar_out && !aa_ocupado_in) begin
-	// if (state == ST_ESTABILIZAR && no_aprovado && !lvv_desativar_out && !aa_ocupado_in) begin
 		lvv_estabelecidos_write_en_out = 1'b1;
 		lvv_estabelecidos_write_data_out = 1'b1;
 	end
@@ -305,9 +305,7 @@ always @(*) begin
             next_state = ST_ANALISAR_VIZINHO;
         // Analisando cada um dos vizinhos de um nó aprovado, primeiramente identificando se o mesmo é válido
         ST_ANALISAR_VIZINHO:
-        	if (vizinho_invalido)
-            	next_state = ST_EXPANDIR_VIZINHOS;
-            else if (gma_obstaculos_rd_data_in == 1'b1)
+        	if (vizinho_invalido || gma_obstaculos_rd_data_in == 1'b1)
             	next_state = ST_EXPANDIR_VIZINHOS;
             else
             	next_state = ST_ENCONTRAR_MENOR;

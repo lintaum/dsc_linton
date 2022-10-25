@@ -200,10 +200,10 @@ def lista_obstaculos_plot(obstaculos):
 if __name__ == '__main__':
     teste = False
     grafico = True
-    teste = True
+    # teste = True
     # grafico= False
-    num_nos = 39
-    inicio = 11
+    num_nos = 2048
+    inicio = 39
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True

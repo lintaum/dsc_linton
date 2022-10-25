@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : controlador_maquina_estados.v
 //  Created On    : 2022-10-06 08:19:57
-//  Last Modified : 2022-10-25 10:06:33
+//  Last Modified : 2022-10-25 10:33:24
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -42,7 +42,6 @@ localparam ST_IDLE = 0,
 		   ST_TEM_ATIVO = 2,
            ST_ATUALIZAR_BUFFER = 4,
 		   ST_EXPANDIR_ATUALIZAR = 5,
-		   ST_ATUALIZAR = 5,
 		   ST_CONSTRUIR_CAMINHO = 6,
 		   ST_PRONTO = 7;
 //Wires
