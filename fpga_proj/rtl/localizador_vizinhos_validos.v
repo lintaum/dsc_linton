@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos.v
 //  Created On    : 2022-10-04 09:59:38
-//  Last Modified : 2022-10-25 15:11:27
+//  Last Modified : 2022-11-22 10:00:22
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -16,6 +16,7 @@
 //  3) MAX_VIZINHOSx Memória de estabelecidos - remoção das relações que são estabelecidos
 //  4) MAX_VIZINHOSx Memória de relações - identificação das relações do vizinho para identificar o menor vizinho
 //  5) MAX_VIZINHOSxMAX_VIZINHOSx Memória de obstáculos - identificação dos obstaculos do menor vizinho
+// Um vizinho inválido é analisado diversas vezes, como diminuir isso?
 //==================================================================================================
 module localizador_vizinhos_validos
 		#(
@@ -71,6 +72,7 @@ module localizador_vizinhos_validos
 //Internal
 //*******************************************************
 //Local Parameters
+integer w;
 genvar i;
 localparam COUNT_WIDTH = 10;
 localparam COUNT_VIZINHO_WIDTH = 3;
@@ -122,9 +124,10 @@ assign endereco_vizinho_atual = relacoes_2d_addr_ap[count_vizinho];
 assign no_aprovado = aa_aprovado_in[proximo_aprovado] == 1'b1;
 assign no_aprovado_prox = aa_aprovado_in[proximo_aprovado] == 1'b1;
 assign vizinho_invalido = endereco_vizinho_atual == {ADDR_WIDTH{1'b1}};
-assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}};
+assign vizinho_invalido_in = relacoes_2d_addr_in[count_sub_vizinho] == {ADDR_WIDTH{1'b1}} && gma_obstaculos_rd_data_in == 1'b0;
 assign lvv_pronto_out = state == ST_FINALIZAR;
 assign tem_aprovado = aprovados_reg != 0;
+
 //*******************************************************
 // Desempacotando leitura de relações de um no
 //*******************************************************
@@ -139,10 +142,11 @@ generate
 		assign relacoes_2d_addr_in[i] = relacoes_2d_in[i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
     end
 endgenerate
+
 //*******************************************************
 //analisando entrada
 //*******************************************************
-integer w;
+// Inidicando o próximo nó aprovado
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		proximo_aprovado <= 0;
@@ -156,7 +160,7 @@ always @(posedge clk or negedge rst_n) begin
 	end
 end
 
-
+// Salvando a posição dos nós aprovados
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
 		aprovados_reg <= 0;
@@ -171,7 +175,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //*******************************************************
-//registrando as relações de um nó aprovado
+// Registrando as relações de um nó aprovado
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
@@ -224,7 +228,7 @@ always @(*) begin
 	end
 	else if (state == ST_EXPANDIR_VIZINHOS || state == ST_ENCONTRAR_MENOR || state == ST_SALVAR_MENOR) begin
 		lvv_relacoes_rd_enable_out = 1'b1;
-		lvv_relacoes_rd_addr_out = relacoes_2d_addr_ap[count_vizinho];	
+		lvv_relacoes_rd_addr_out = relacoes_2d_addr_ap[count_vizinho];
 	end
 end
 
@@ -233,11 +237,11 @@ always @(*) begin
 	lvv_obstaculos_rd_addr_out = relacoes_2d_addr_ap[count_vizinho];
 	if (state == ST_EXPANDIR_VIZINHOS) begin
 		lvv_obstaculos_rd_enable_out = 1'b1;
-		lvv_obstaculos_rd_addr_out = relacoes_2d_addr_ap[count_vizinho];	
+		lvv_obstaculos_rd_addr_out = relacoes_2d_addr_ap[count_vizinho];
 	end
 	else if (state == ST_ENCONTRAR_MENOR || state == ST_SALVAR_MENOR) begin
 		lvv_obstaculos_rd_enable_out = 1'b1;
-		lvv_obstaculos_rd_addr_out = relacoes_2d_addr_in[count_sub_vizinho];	
+		lvv_obstaculos_rd_addr_out = relacoes_2d_addr_in[count_sub_vizinho];
 	end
 end
 
@@ -290,11 +294,11 @@ always @(*) begin
         ST_IDLE:
             if (cme_expandir_in && !lvv_pronto && !lvv_pronto_out)
                 next_state = ST_ESTABILIZAR;
-        // Esdtabilizandos os nós aprovados
+        // 8 Estabilizandos os nós aprovados
         ST_ESTABILIZAR:
 	        if (!tem_aprovado)
 	            next_state = ST_ENCONTRAR_APROVADO;
-	    //Identificando os aprovados
+	    // 1 Identificando os aprovados
         ST_ENCONTRAR_APROVADO:
             if (tem_aprovado)
                 next_state = ST_ENCONTRAR_VIZINHOS;
@@ -309,22 +313,26 @@ always @(*) begin
             	next_state = ST_EXPANDIR_VIZINHOS;
             else
             	next_state = ST_ENCONTRAR_MENOR;
-        // Entre os vizinhos do vizinho, encontrando aquele que possui o menor custo
+        // 4 Entre os vizinhos do vizinho, encontrando aquele que possui o menor custo
         ST_ENCONTRAR_MENOR:
-        	if (nao_vizinho_atual && !vizinho_invalido_in && gma_obstaculos_rd_data_in == 1'b0) // Para não adicionar o nó aprovado
+        	if (nao_vizinho_atual && !vizinho_invalido_in) // Para não adicionar o nó aprovado
         		next_state = ST_SALVAR_MENOR;
 		    else if (count_sub_vizinho == MAX_VIZINHOS-1)
 		    	next_state = ST_EXPANDIR_VIZINHOS;
+		// 5
         ST_SALVAR_MENOR:
         	next_state = ST_EXPANDIR_VIZINHOS;
+        // 6 Quando o vizinho atual é invalido pega o próximo
         ST_EXPANDIR_VIZINHOS:
         	if (count_vizinho != MAX_VIZINHOS-1)
         		next_state = ST_ANALISAR_VIZINHO;
         	else
+        		// Analisar o próximo aprovado ou finalizar
         		if (!tem_aprovado)
         			next_state = ST_FINALIZAR;
         		else
         			next_state = ST_ENCONTRAR_APROVADO;
+        // 7
         ST_FINALIZAR:
         		next_state = ST_IDLE;
     endcase
@@ -339,12 +347,9 @@ always @(*) begin
 	// endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v
 	endereco_w = relacoes_2d_addr_ap[count_vizinho];
 	custo_vw = relacoes_2d_custo_ap[count_vizinho];
-	
 	menor_vizinho = relacoes_2d_custo_in[count_sub_vizinho-1];
-	
 	aprovado = aa_endereco_2d[proximo_aprovado];
 	distancia_v = aa_distancia_2d[proximo_aprovado];
-	
 	nova_distancia = distancia_v + custo_vw;
 end
 
@@ -360,8 +365,10 @@ always @(posedge clk or negedge rst_n) begin
 		lvv_menor_vizinho_out <= {CUSTO_WIDTH{1'b0}};
 		lvv_anterior_out <= {ADDR_WIDTH{1'b0}};
 		lvv_distancia_out <= {DISTANCIA_WIDTH{1'b0}};
+		lvv_pronto <= 1'b0;
 	end
 	else begin
+		lvv_pronto <= lvv_pronto_out;
 		lvv_desativar_out <= 1'b0;
 		lvv_atualizar_out <= 1'b0;
 		lvv_menor_vizinho_out <= menor_vizinho;
@@ -378,15 +385,6 @@ always @(posedge clk or negedge rst_n) begin
 			if (lvv_atualizar_out != 1'b1 && !aa_ocupado_in && !ge_estabelecidos_read_data_in)
 				lvv_atualizar_out <= 1'b1;
 		end
-	end
-end
-
-always @(posedge clk or negedge rst_n) begin
-	if (!rst_n) begin
-		lvv_pronto <= 1'b0;
-	end
-	else begin
-		lvv_pronto <= lvv_pronto_out;
 	end
 end
 
