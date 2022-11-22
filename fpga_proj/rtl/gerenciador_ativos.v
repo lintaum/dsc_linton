@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2022-10-21 14:34:43
+//  Last Modified : 2022-11-11 08:13:31
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -153,7 +153,7 @@ end
 
 //*******************************************************
 //General Purpose Signals
-// Verificando se o endereço se encontra armazenado é ativo, só pode existir um endereço por nó.
+// Verificando se o endereço se encontra armazenado e ativo, só pode existir um endereço por nó.
 // O hit verifica se o endereço recebido está armazenado em um nó ativo.
 //*******************************************************
 //Convertendo entrada 1d para 2d

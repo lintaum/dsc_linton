@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : dual_port_ram.v
 //  Created On    : 2018-05-17 08:31:35
-//  Last Modified : 2022-10-12 09:44:18
+//  Last Modified : 2022-11-22 09:13:17
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : SENAI
@@ -11,7 +11,7 @@
 //
 //
 //==================================================================================================
-module dual_port_ram 
+module dual_port_ram_8 
 	#(
 		parameter DATA_WIDTH = 32,
 		parameter ADDR_WIDTH = 10
@@ -22,7 +22,7 @@ module dual_port_ram
 	input [DATA_WIDTH-1:0] data_i,
 	input write_en_i,
 	input read_en_i,
-	input [ADDR_WIDTH-1:0] write_addr_i
+	input [ADDR_WIDTH-1:0] write_addr_i,
 	input [ADDR_WIDTH-1:0] read_addr0_i,
 	input [ADDR_WIDTH-1:0] read_addr1_i,
 	input [ADDR_WIDTH-1:0] read_addr2_i,
@@ -38,7 +38,7 @@ module dual_port_ram
 	output [DATA_WIDTH-1:0] data4_o,
 	output [DATA_WIDTH-1:0] data5_o,
 	output [DATA_WIDTH-1:0] data6_o,
-	output [DATA_WIDTH-1:0] data7_o,
+	output [DATA_WIDTH-1:0] data7_o
 );
 
 localparam MEM_SIZE = 2**ADDR_WIDTH;

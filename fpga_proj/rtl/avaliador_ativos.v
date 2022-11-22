@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-10-25 09:54:01
+//  Last Modified : 2022-11-11 08:15:36
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -80,6 +80,7 @@ generate
         assign aa_anterior_data_out[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i] = na_anterior_2d[i];
     end
 endgenerate
+
 //*******************************************************
 //Outputs
 //*******************************************************
@@ -99,6 +100,7 @@ always @(posedge clk or negedge rst_n) begin
       aa_pronto_out <= 1'b1;
   end
 end
+
 //*******************************************************
 //Instantiations
 //*******************************************************
