@@ -43,7 +43,7 @@ module no_ativo
 //Local Parameters
 
 //Wires
-wire ativar, atualizar, nova_menor_distancia, aprovado;
+wire ativar, atualizar, nova_menor_distancia, aprovado, desativar;
 //Registers
 reg [CUSTO_WIDTH-1:0] menor_vizinho_r;
 //General Purpose Signals
