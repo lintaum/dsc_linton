@@ -1,3 +1,16 @@
+//==================================================================================================
+//  Filename      : gerenciador_estabelecidos.v
+//  Created On    : 2022-08-30 10:13:25
+//  Last Modified : 2022-11-22 10:11:35
+//  Revision      : 
+//  Author        : Linton Esteves
+//  Company       : UFBA
+//  Email         : lintonthiago@gmail.com
+//
+//  Description   : Armazenar a situação dos nós do grafo quanto ao seu estabelecimento.
+//  Essa memória deve ser inicializada com zero.
+//
+//==================================================================================================
 module gerenciador_estabelecidos
 		#(
 			parameter DATA_WIDTH = 1,
@@ -9,12 +22,24 @@ module gerenciador_estabelecidos
 			input write_en_in,
 			input [DATA_WIDTH-1:0] write_data_in,
 			input [ADDR_WIDTH-1:0] write_addr_in,
-			input read_en0_in,
-			input read_en1_in,
 			input [ADDR_WIDTH-1:0] read_addr0_in,
 			input [ADDR_WIDTH-1:0] read_addr1_in,
+			input [ADDR_WIDTH-1:0] read_addr2_in,
+			input [ADDR_WIDTH-1:0] read_addr3_in,
+			input [ADDR_WIDTH-1:0] read_addr4_in,
+			input [ADDR_WIDTH-1:0] read_addr5_in,
+			input [ADDR_WIDTH-1:0] read_addr6_in,
+			input [ADDR_WIDTH-1:0] read_addr7_in,
+			input [ADDR_WIDTH-1:0] read_addr8_in,
 			output [DATA_WIDTH-1:0] read_data0_out,
-			output [DATA_WIDTH-1:0] read_data1_out
+			output [DATA_WIDTH-1:0] read_data1_out,
+			output [DATA_WIDTH-1:0] read_data2_out,
+			output [DATA_WIDTH-1:0] read_data3_out,
+			output [DATA_WIDTH-1:0] read_data4_out,
+			output [DATA_WIDTH-1:0] read_data5_out,
+			output [DATA_WIDTH-1:0] read_data6_out,
+			output [DATA_WIDTH-1:0] read_data7_out,
+			output [DATA_WIDTH-1:0] read_data8_out
 		);
 //*******************************************************
 //Internal
@@ -47,8 +72,15 @@ end
 //*******************************************************
 //Outputs
 //*******************************************************
-assign read_data0_out = read_en0_in ? mem[read_addr0_in] : {DATA_WIDTH{1'bz}};
-assign read_data1_out = read_en1_in ? mem[read_addr1_in] : {DATA_WIDTH{1'bz}};
+assign read_data0_out = mem[read_addr0_in];
+assign read_data1_out = mem[read_addr1_in];
+assign read_data2_out = mem[read_addr2_in];
+assign read_data3_out = mem[read_addr3_in];
+assign read_data4_out = mem[read_addr4_in];
+assign read_data5_out = mem[read_addr5_in];
+assign read_data6_out = mem[read_addr6_in];
+assign read_data7_out = mem[read_addr7_in];
+assign read_data8_out = mem[read_addr8_in];
 
 //*******************************************************
 //Instantiations
