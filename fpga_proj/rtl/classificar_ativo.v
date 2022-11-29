@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2022-10-21 14:28:58
+//  Last Modified : 2022-11-22 10:17:28
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -35,6 +35,7 @@ localparam COUNT_WIDTH = $clog2(NUM_NA);
 genvar i;
 //Wires
 wire [CRITERIO_WIDTH-1:0] na_criterio_2d [0:NUM_NA-1];
+wire parar_contagem;
 //Registers
 reg [COUNT_WIDTH-1:0] count;
 

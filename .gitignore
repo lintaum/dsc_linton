@@ -26,3 +26,4 @@ celerybeat-schedule*
 celerybeat.pid
 staticfiles/
 maintenance_mode_state.txt
+*.bin

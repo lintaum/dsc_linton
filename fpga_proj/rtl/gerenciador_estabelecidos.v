@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_estabelecidos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2022-11-22 10:11:35
+//  Last Modified : 2022-11-29 14:00:06
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -14,32 +14,18 @@
 module gerenciador_estabelecidos
 		#(
 			parameter DATA_WIDTH = 1,
-			parameter ADDR_WIDTH = 8
+			parameter ADDR_WIDTH = 8,
+			parameter NUM_WRITE_PORTS = 1,
+      parameter NUM_READ_PORTS = 8
 		)
 		(/*autoport*/
 			input clk,
 			input rst_n,
+			input soft_reset_n,
 			input write_en_in,
-			input [DATA_WIDTH-1:0] write_data_in,
-			input [ADDR_WIDTH-1:0] write_addr_in,
-			input [ADDR_WIDTH-1:0] read_addr0_in,
-			input [ADDR_WIDTH-1:0] read_addr1_in,
-			input [ADDR_WIDTH-1:0] read_addr2_in,
-			input [ADDR_WIDTH-1:0] read_addr3_in,
-			input [ADDR_WIDTH-1:0] read_addr4_in,
-			input [ADDR_WIDTH-1:0] read_addr5_in,
-			input [ADDR_WIDTH-1:0] read_addr6_in,
-			input [ADDR_WIDTH-1:0] read_addr7_in,
-			input [ADDR_WIDTH-1:0] read_addr8_in,
-			output [DATA_WIDTH-1:0] read_data0_out,
-			output [DATA_WIDTH-1:0] read_data1_out,
-			output [DATA_WIDTH-1:0] read_data2_out,
-			output [DATA_WIDTH-1:0] read_data3_out,
-			output [DATA_WIDTH-1:0] read_data4_out,
-			output [DATA_WIDTH-1:0] read_data5_out,
-			output [DATA_WIDTH-1:0] read_data6_out,
-			output [DATA_WIDTH-1:0] read_data7_out,
-			output [DATA_WIDTH-1:0] read_data8_out
+			input [ADDR_WIDTH*NUM_WRITE_PORTS-1:0] write_addr_in,
+			input [ADDR_WIDTH*NUM_READ_PORTS-1:0] read_addr_in,
+			output [DATA_WIDTH*NUM_READ_PORTS-1:0] read_data_out
 		);
 //*******************************************************
 //Internal
@@ -47,43 +33,56 @@ module gerenciador_estabelecidos
 //Local Parameters
 // localparam MEM_SIZE = $pow(ADDR_WIDTH, 2);
 localparam MEM_SIZE = 2**ADDR_WIDTH;
-integer i;
+integer k;
+genvar i;
 //Wires
-
+wire [ADDR_WIDTH-1:0] write_addr [0:NUM_WRITE_PORTS-1];
+wire [ADDR_WIDTH-1:0] read_addr [0:NUM_READ_PORTS-1];
 //Registers
 reg [DATA_WIDTH-1:0] mem [0:MEM_SIZE-1];
+
+//*******************************************************
+//Converter Dimensão
+//*******************************************************
+generate
+    for (i = 0; i < NUM_WRITE_PORTS; i = i + 1) begin:convert_2d_1d_write
+        assign write_addr[i] = write_addr_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
+    end
+endgenerate
+
+generate
+    for (i = 0; i < NUM_READ_PORTS; i = i + 1) begin:convert_2d_1d_read
+        assign read_addr[i] = read_addr_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
+        assign read_data_out[DATA_WIDTH*i+DATA_WIDTH-1:DATA_WIDTH*i] = mem[read_addr[i]];
+    end
+endgenerate
+
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
 
-always @(posedge clk) begin
+always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-       for (i = 0; i < MEM_SIZE; i = i + 1)begin
-           mem[i] <= {DATA_WIDTH{1'b0}};
+       for (k = 0; k < MEM_SIZE; k = k + 1)begin
+           mem[k] <= 1'b0;
        end
     end
     else begin
+    	if (!soft_reset_n) begin
+    		for (k = 0; k < MEM_SIZE; k = k + 1)begin
+           		mem[k] <= 1'b0;
+       		end	
+    	end
         if (write_en_in) begin
-            mem[write_addr_in] <= write_data_in;
+            for (k = 0; k < NUM_WRITE_PORTS; k = k + 1) begin
+               mem[write_addr[k]] <= 1'b1;
+            end
         end
     end
 end
 
 //*******************************************************
 //Outputs
-//*******************************************************
-assign read_data0_out = mem[read_addr0_in];
-assign read_data1_out = mem[read_addr1_in];
-assign read_data2_out = mem[read_addr2_in];
-assign read_data3_out = mem[read_addr3_in];
-assign read_data4_out = mem[read_addr4_in];
-assign read_data5_out = mem[read_addr5_in];
-assign read_data6_out = mem[read_addr6_in];
-assign read_data7_out = mem[read_addr7_in];
-assign read_data8_out = mem[read_addr8_in];
-
-//*******************************************************
-//Instantiations
 //*******************************************************
 
 endmodule

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-10-25 09:57:24
+//  Last Modified : 2022-11-29 08:00:33
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -23,7 +23,8 @@ module top
             parameter MAX_VIZINHOS = `MAX_VIZINHOS,
             parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
             parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
-            parameter NUM_NA = `MAX_ATIVOS
+            parameter NUM_NA = `MAX_ATIVOS,
+            parameter NUM_PORTS = 8
         )
         (/*autoport*/
             input clk,
@@ -75,19 +76,23 @@ wire [ADDR_WIDTH-1:0] lvv_endereco;
 wire [CUSTO_WIDTH-1:0] lvv_menor_vizinho;
 wire [DISTANCIA_WIDTH-1:0] lvv_distancia;
 wire [ADDR_WIDTH-1:0] lvv_anterior;
-wire lvv_relacoes_rd_enable;
 wire [ADDR_WIDTH-1:0] lvv_relacoes_rd_addr;
-wire lvv_obstaculos_rd_enable;
 wire [ADDR_WIDTH-1:0] lvv_obstaculos_rd_addr;
-wire lvv_estabelecidos_write_en;
-wire lvv_estabelecidos_write_data;
-wire [ADDR_WIDTH-1:0] lvv_estabelecidos_write_addr;
+wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_write_addr;
 wire lvv_estabelecidos_read_en;
-wire [ADDR_WIDTH-1:0] lvv_estabelecidos_read_addr;
-//sinais de saida do gma
-wire [RELACOES_DATA_WIDTH-1:0] gma_relacoes_rd_data;
-wire gma_obstaculos_rd_data;
+wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_read_addr;
 wire lvv_pronto;
+
+wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_relacoes_read_addr;
+wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_obstaculos_read_addr;
+wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_read_addr;
+
+// sinais de saída do GE
+wire [NUM_PORTS-1:0] ge_read_data;
+
+//sinais de saida do gma
+wire [RELACOES_DATA_WIDTH*NUM_PORTS-1:0] gma_relacoes_read_data;
+wire [NUM_PORTS-1:0] gma_obstaculos_read_data;
 
 // sinais de controle do top
 wire [ADDR_WIDTH-1:0] endereco_mix;
@@ -152,15 +157,11 @@ gerenciador_estabelecidos
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
+            .soft_reset_n(!top_wr_fonte_in),
             .write_en_in(lvv_estabelecidos_write_en),
-            .write_data_in(lvv_estabelecidos_write_data),
             .write_addr_in(lvv_estabelecidos_write_addr),
-            .read_en0_in(lvv_estabelecidos_read_en),
-            .read_en1_in(),
-            .read_addr0_in(lvv_estabelecidos_read_addr),
-            .read_addr1_in(),
-            .read_data0_out(ge_read_data0_out),
-            .read_data1_out(ge_read_data1_out)
+            .read_addr_in(lvv_estabelecidos_read_addr),
+            .read_data_out(ge_read_data)
         );
 
 gerenciador_memorias_acesso_externo
@@ -172,12 +173,10 @@ gerenciador_memorias_acesso_externo
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
-            .relacoes_rd_enable_in(lvv_relacoes_rd_enable),
-            .relacoes_rd_addr_in(lvv_relacoes_rd_addr),
-            .relacoes_rd_data_out(gma_relacoes_rd_data),
-            .obstaculos_rd_enable_in(lvv_obstaculos_rd_enable),
-            .obstaculos_rd_addr_in(lvv_obstaculos_rd_addr),
-            .obstaculos_rd_data_out(gma_obstaculos_rd_data),
+            .relacoes_read_addr_in(lvv_relacoes_read_addr),
+            .relacoes_read_data_out(gma_relacoes_read_data),
+            .obstaculos_read_addr_in(lvv_obstaculos_read_addr),
+            .obstaculos_read_data_out(gma_obstaculos_read_data),
             .obstaculos_wr_enable_in(obstaculos_wr_enable_in),
             .obstaculos_wr_addr_in(obstaculos_wr_addr_in),
             .obstaculos_wr_data_in(obstaculos_wr_data_in)
@@ -248,7 +247,7 @@ buffer
         .data_out({buff_aa_aprovado, buff_aa_endereco, buff_aa_distancia})
     );
 
-localizador_vizinhos_validos
+localizador_vizinhos_validos8
         #(
             .ADDR_WIDTH(ADDR_WIDTH),
             .MAX_VIZINHOS(MAX_VIZINHOS),
@@ -278,23 +277,20 @@ localizador_vizinhos_validos
             .lvv_menor_vizinho_out(lvv_menor_vizinho),
             .lvv_distancia_out(lvv_distancia),
             .lvv_anterior_out(lvv_anterior),
-            .lvv_relacoes_rd_enable_out(lvv_relacoes_rd_enable),
-            .lvv_relacoes_rd_addr_out(lvv_relacoes_rd_addr),
-            .gma_relacoes_rd_data_in(gma_relacoes_rd_data),
-            .lvv_obstaculos_rd_enable_out(lvv_obstaculos_rd_enable),
-            .lvv_obstaculos_rd_addr_out(lvv_obstaculos_rd_addr),
-            .gma_obstaculos_rd_data_in(gma_obstaculos_rd_data),
             .lvv_estabelecidos_write_en_out(lvv_estabelecidos_write_en),
-            .lvv_estabelecidos_write_data_out(lvv_estabelecidos_write_data),
             .lvv_estabelecidos_write_addr_out(lvv_estabelecidos_write_addr),
-            .lvv_estabelecidos_read_en_out(lvv_estabelecidos_read_en),
-            .lvv_estabelecidos_read_addr_out(lvv_estabelecidos_read_addr),
-            .ge_estabelecidos_read_data_in(ge_read_data0_out),
             .lvv_anterior_data_out(lvv_anterior_data),
-            .lvv_pronto_out(lvv_pronto)
+            .lvv_pronto_out(lvv_pronto),
             
-        );
+            .lvv_relacoes_read_addr_out(lvv_relacoes_read_addr),
+            .gma_relacoes_read_data_in(gma_relacoes_read_data),
 
+            .lvv_obstaculos_read_addr_out(lvv_obstaculos_read_addr),
+            .gma_obstaculos_read_data_in(gma_obstaculos_read_data),
+
+            .lvv_estabelecidos_read_addr_out(lvv_estabelecidos_read_addr),       
+            .ge_read_data_in(ge_read_data)
+        );
 
 
 endmodule

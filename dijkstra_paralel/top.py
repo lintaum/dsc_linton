@@ -97,6 +97,8 @@ class DijkstraParallel():
                     basicamente transformando de 2d para 1d"""
                     buffer10.append([endereco_w, custo_vw, menor_vizinho, aprovado, distancia_v])
                 """Removendo o nó aprovado do buffer em LVV"""
+                if self.lvv.get_len_buffer() > max_buffer_lvv:
+                    max_buffer_lvv = self.lvv.get_len_buffer()
                 self.lvv.remover_do_buffer(aprovado)
 
             """Passo 3 - Calculando a distância e atualizando"""
@@ -202,7 +204,7 @@ if __name__ == '__main__':
     grafico = True
     # teste = True
     # grafico= False
-    num_nos = 2048
+    num_nos = 16
     inicio = 39
     tem_obstaculo = True
     # tem_obstaculo = False

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top_tb.v
 //  Created On    : 2022-08-29 07:33:34
-//  Last Modified : 2022-10-24 07:38:58
+//  Last Modified : 2022-11-29 11:35:22
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -188,6 +188,9 @@ top
             .rst_n(rst_n),
             .top_addr_fonte_in(top_addr_fonte_in),
             .top_addr_destino_in(top_addr_destino_in),
+            .obstaculos_wr_data_in(1'b0),
+            .obstaculos_wr_enable_in(1'b0),
+            .obstaculos_wr_addr_in(0),
             .top_wr_fonte_in(top_wr_fonte_in)
         );
 endmodule
