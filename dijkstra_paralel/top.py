@@ -109,10 +109,11 @@ class DijkstraParallel():
                 gasto computacional pois sempre irá analisar todos os nós, no entanto, reduz e centraliza o acesso 
                 de leitura aos buffer do avaliador de ativos. A nova distância deve ser comparada com a distância 
                 armazenada, pois outro nó pode ter atualizado com uma distância menor do que a atual"""
+
                 if self.mem_estabelecidos.ler(endereco_w) == 0:
                     num_passo3 += 1
                     distancia_vw = distancia_v + custo_vw
-                    print(f"Atualizar Nó {endereco_w}, distancia {distancia_vw}, anterior {aprovado}")
+                    # print(f"Atualizar Nó {endereco_w}, distancia {distancia_vw}, anterior {aprovado}")
                     if self.avaliador_ativos.get_distancia_no_buffer(endereco_w) > distancia_vw:
                         self.avaliador_ativos.inserir_no_buffer(distancia=distancia_vw,
                                                                 endereco=endereco_w,
@@ -204,8 +205,8 @@ if __name__ == '__main__':
     grafico = True
     # teste = True
     # grafico= False
-    num_nos = 16
-    inicio = 39
+    num_nos = 2048
+    inicio = 15
     tem_obstaculo = True
     # tem_obstaculo = False
     debug = True

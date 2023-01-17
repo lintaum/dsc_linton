@@ -1,14 +1,14 @@
 //==================================================================================================
 //  Filename      : expansor_aprovados.v
 //  Created On    : 2022-11-23 08:07:40
-//  Last Modified : 2022-11-29 14:13:52
+//  Last Modified : 2023-01-17 08:07:11
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
 //  Email         : lintonthiago@gmail.com
 //
 //  Description   : 
-//
+// relacoes_4d_custo_reg e relacoes_4d_addr foram criados como memorias locais para diminuir o acesso às memorias
 //
 //==================================================================================================
 module expansor_aprovados
@@ -76,9 +76,9 @@ localparam COUNT_DISTANCIA_WIDTH = 4;
 localparam COUNT_WIDTH = 4;
 //Wires
 wire [RELACOES_DATA_WIDTH-1:0] relacoes_2d [0:NUM_READ_PORTS-1];
-wire [UMA_RELACAO_WIDTH-1:0] relacoes_4d [0:MAX_VIZINHOS-1];
-wire [CUSTO_WIDTH-1:0] relacoes_4d_custo [0:MAX_VIZINHOS-1];
-wire [ADDR_WIDTH-1:0] relacoes_4d_addr [0:MAX_VIZINHOS-1];
+wire [UMA_RELACAO_WIDTH-1:0] relacoes_4d [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
+wire [CUSTO_WIDTH-1:0] relacoes_4d_custo [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
+wire [ADDR_WIDTH-1:0] relacoes_4d_addr [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
 wire salvou_todos, todos_analisados;
 wire [UMA_RELACAO_WIDTH-1:0] relacoes_aprovado_2d [0:MAX_VIZINHOS-1];
 wire [CUSTO_WIDTH-1:0] relacoes_aprovado_custo [0:MAX_VIZINHOS-1];
@@ -111,7 +111,7 @@ endgenerate
 
 generate
     for (i = 0; i < NUM_READ_PORTS; i = i + 1) begin:convert_1d_in
-        assign relacoes_2d[NUM_READ_PORTS-1-i] = gma_relacoes_rd_data_in[RELACOES_DATA_WIDTH*i+RELACOES_DATA_WIDTH-1:RELACOES_DATA_WIDTH*i];
+        assign relacoes_2d[i] = gma_relacoes_rd_data_in[RELACOES_DATA_WIDTH*i+RELACOES_DATA_WIDTH-1:RELACOES_DATA_WIDTH*i];
     end
 endgenerate
 
@@ -126,16 +126,15 @@ endgenerate
 
 // Todo: testar isso aqui  
 generate
-    for (i = 0; i < NUM_READ_PORTS; i = i + 1) begin:convert_2d_in
-        for (j = 0; j < MAX_VIZINHOS; j = j + 1) begin:convert_2d_4d_in
-            assign relacoes_4d[j][MAX_VIZINHOS-1-i] = relacoes_2d[j][UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
-            assign relacoes_4d_custo[j][i] = relacoes_4d[i][CUSTO_WIDTH-1:0];
-            assign relacoes_4d_addr[j][i] = relacoes_4d[i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
+    for (j = 0; j < MAX_VIZINHOS; j = j + 1) begin:convert_4d_in
+        for (i = 0; i < NUM_READ_PORTS; i = i + 1) begin:convert_2d_in
+            assign relacoes_4d[j*MAX_VIZINHOS+(NUM_READ_PORTS-i-1)] = relacoes_2d[j][UMA_RELACAO_WIDTH*i+UMA_RELACAO_WIDTH-1:UMA_RELACAO_WIDTH*i];
+            
+            assign relacoes_4d_custo[j*MAX_VIZINHOS+i] = relacoes_4d[j*MAX_VIZINHOS+i][CUSTO_WIDTH-1:0];
+            assign relacoes_4d_addr[j*MAX_VIZINHOS+i] = relacoes_4d[j*MAX_VIZINHOS+i][ADDR_WIDTH-1+CUSTO_WIDTH:CUSTO_WIDTH];
         end
     end
 endgenerate
-
-
 
 assign ea_anterior_out = endereco_aprovado;
 
@@ -146,6 +145,27 @@ generate
         assign ea_endereco_out[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i] = relacoes_aprovado_addr[i];
     end
 endgenerate
+
+
+reg [CUSTO_WIDTH-1:0] relacoes_4d_custo_reg [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
+reg [ADDR_WIDTH-1:0] relacoes_4d_addr_reg [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        for (w = 0; w < MAX_VIZINHOS*NUM_READ_PORTS; w = w +1) begin
+            relacoes_4d_custo_reg[w] <= {DISTANCIA_WIDTH{1'b1}};
+            relacoes_4d_addr_reg[w] <= {DISTANCIA_WIDTH{1'b1}};
+        end
+    end
+    else begin
+        for (w = 0; w < MAX_VIZINHOS*NUM_READ_PORTS; w = w +1) begin
+            if (state == ST_LER_RELACOES) begin
+                relacoes_4d_addr_reg[w] <= relacoes_4d_addr[w];
+                relacoes_4d_custo_reg[w] <= relacoes_4d_custo[w];
+            end
+        end
+    end
+end
 
 //*******************************************************
 //Sinais de controle
@@ -169,6 +189,7 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+// Lendo as relações do nó aprovado, sempre será na posição zero
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         relacoes_aprovado_reg <= {{1'b0}};
@@ -226,7 +247,7 @@ always @(posedge clk or negedge rst_n) begin
         if (state == ST_LER_OBSTACULO_SUBVIZINHO && lvv_obstaculos_ready_in == 1'b1) begin
             for (w = 0; w < NUM_READ_PORTS; w = w + 1) begin
                 if (vizinho_salvo[w] == 1'b0 && gma_obstaculos_rd_data_in[w] == 1'b0)
-                    menor_vizinho_reg[w] <= relacoes_4d_custo[count_subvizinho][w];
+                    menor_vizinho_reg[w] <= relacoes_4d_custo_reg[count_subvizinho+w*NUM_READ_PORTS];
             end
         end
     end
@@ -237,12 +258,19 @@ always @(posedge clk or negedge rst_n) begin
         vizinho_salvo <= {NUM_READ_PORTS{1'b0}};
     end
     else begin
-        if (state == ST_IDLE) begin
-            vizinho_salvo <= {NUM_READ_PORTS{1'b0}};
+        // Removendo os nós inválidos 
+        if (state == ST_LER_RELACOES) begin
+            for (w = 0; w < NUM_READ_PORTS; w = w + 1) begin
+                if (ea_vizinho_valido_out[w] == 1'b0)
+                    vizinho_salvo[w] <= 1'b1;
+                else
+                    vizinho_salvo[w] <= 1'b0;
+            end
         end
         if (state == ST_LER_OBSTACULO_SUBVIZINHO && lvv_obstaculos_ready_in == 1'b1) begin
             for (w = 0; w < NUM_READ_PORTS; w = w + 1) begin
-                vizinho_salvo[w] <= 1'b1;
+                if (gma_obstaculos_rd_data_in[w] == 1'b0)
+                    vizinho_salvo[w] <= 1'b1;
             end
         end
     end
@@ -263,33 +291,46 @@ end
 always @(*) begin
     next_state = state;
     case (state)
+        // 0
         ST_IDLE:
             if (lvv_escrever_aprovado_in)
                 next_state = ST_LER_APROVADO;
+        // 1
         ST_LER_APROVADO:
+            // Lendo as relações do nó aprovado
             if (lvv_relacoes_ready_in)
                 next_state = ST_LER_OBSTACULO;
+        // 2
         ST_LER_OBSTACULO:
+            // Identificando quais relações são obstáculos
             if (lvv_obstaculos_ready_in)
                 next_state = ST_LER_ESTABELECIDO;
+        // 3
         ST_LER_ESTABELECIDO:
+            // Identificando quais relações já estão estabelecidas
             if (lvv_estabelecido_ready_in)
                 next_state = ST_SALVAR_STATUS;
+        // 4
         ST_SALVAR_STATUS:
                 next_state = ST_LER_RELACOES;
+        // 5
         ST_LER_RELACOES:
             if (lvv_relacoes_ready_in)
                 next_state = ST_IDENTIFICAR_SUBVIZINHOS;
+        // 6
         ST_IDENTIFICAR_SUBVIZINHOS:
                 next_state = ST_LER_OBSTACULO_SUBVIZINHO;
+        // 7
         ST_LER_OBSTACULO_SUBVIZINHO:
             if (lvv_obstaculos_ready_in)
                 next_state = ST_SALVAR_MENOR;
+        // 8
         ST_SALVAR_MENOR:
             if (salvou_todos || todos_analisados)
                 next_state = ST_FINALIZAR;
             else
-                next_state = ST_SALVAR_MENOR;
+                next_state = ST_IDENTIFICAR_SUBVIZINHOS;
+        // 9
         ST_FINALIZAR:
             if (aa_atualizar_ready_in)
                 next_state = ST_IDLE;
@@ -343,8 +384,9 @@ always @(posedge clk or negedge rst_n) begin
       count_subvizinho <= {COUNT_WIDTH{1'b0}};
    end
    else begin
-      if (state == ST_SALVAR_MENOR && next_state == ST_IDENTIFICAR_SUBVIZINHOS)
-         count_subvizinho <= count_subvizinho +1'b1;
+   // TODO: Analisar
+      if (state == ST_SALVAR_MENOR)
+         count_subvizinho <= count_subvizinho + 1'b1;
       else if (state == ST_IDLE) begin
          count_subvizinho <= {COUNT_WIDTH{1'b0}};
       end
@@ -355,6 +397,20 @@ end
 //Outputs
 //*******************************************************
 assign ea_anterior_out = endereco_aprovado;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        ea_pronto_out <= 1'b1;
+    end
+    else begin
+        if (state == ST_IDLE && !lvv_escrever_aprovado_in) begin
+            ea_pronto_out <= 1'b1;
+        end
+        else begin
+            ea_pronto_out <= 1'b0;
+        end
+    end
+end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -398,11 +454,10 @@ always @(posedge clk or negedge rst_n) begin
             end
         else if (state == ST_LER_OBSTACULO_SUBVIZINHO)
             for (w = 0; w < NUM_READ_PORTS; w = w +1) begin
-                read_addr_2d[w] <= relacoes_4d_addr[count_subvizinho][w];
+                read_addr_2d[w] <= relacoes_4d_addr_reg[count_subvizinho+w*NUM_READ_PORTS];
             end
     end
 end
-
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -427,16 +482,14 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
-
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         ea_atualizar_out <= 1'b0;
     end
     else begin
         ea_atualizar_out <= 1'b0;
-        if (state==ST_FINALIZAR)
+        if (state==ST_FINALIZAR && !aa_atualizar_ready_in)
             ea_atualizar_out <= 1'b1;
-       
     end
 end
 

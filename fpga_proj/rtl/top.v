@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2022-11-29 08:00:33
+//  Last Modified : 2023-01-12 08:53:31
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -24,6 +24,8 @@ module top
             parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
             parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH),
             parameter NUM_NA = `MAX_ATIVOS,
+            parameter NUM_READ_PORTS = 8,
+            parameter NUM_EA = 8,
             parameter NUM_PORTS = 8
         )
         (/*autoport*/
@@ -68,6 +70,7 @@ wire aa_tem_ativo;
 wire aa_tem_aprovado;
 wire aa_ocupado;
 wire aa_pronto;
+wire aa_atualizar_ready;
 //sinais de saida do lvv
 wire lvv_desativar;
 wire lvv_atualizar;
@@ -83,6 +86,14 @@ wire lvv_estabelecidos_read_en;
 wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_read_addr;
 wire lvv_pronto;
 
+wire lvv_aa_desativar;
+wire lvv_aa_atualizar;
+wire [NUM_READ_PORTS-1:0] lvv_aa_vizinho_valido;
+wire [NUM_READ_PORTS*ADDR_WIDTH-1:0] lvv_aa_endereco;
+wire [NUM_READ_PORTS*CUSTO_WIDTH-1:0] lvv_aa_menor_vizinho;
+wire [NUM_READ_PORTS*DISTANCIA_WIDTH-1:0] lvv_aa_distancia;
+wire [ADDR_WIDTH-1:0] lvv_aa_anterior;
+
 wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_relacoes_read_addr;
 wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_obstaculos_read_addr;
 wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_read_addr;
@@ -95,19 +106,19 @@ wire [RELACOES_DATA_WIDTH*NUM_PORTS-1:0] gma_relacoes_read_data;
 wire [NUM_PORTS-1:0] gma_obstaculos_read_data;
 
 // sinais de controle do top
-wire [ADDR_WIDTH-1:0] endereco_mix;
-wire atualizar_mix;
-wire [CUSTO_WIDTH-1:0] menor_vizinho_mix;
-wire [DISTANCIA_WIDTH-1:0] distancia_mix;
+// wire [ADDR_WIDTH-1:0] endereco_mix;
+// wire atualizar_mix;
+// wire [CUSTO_WIDTH-1:0] menor_vizinho_mix;
+// wire [DISTANCIA_WIDTH-1:0] distancia_mix;
 //Registers
 reg [ADDR_WIDTH-1:0] fonte, destino;
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
-assign atualizar_mix = top_wr_fonte_in ? 1'b1: lvv_atualizar;
-assign endereco_mix = top_wr_fonte_in ? top_addr_fonte_in: lvv_endereco;
-assign menor_vizinho_mix = top_wr_fonte_in ? 0: lvv_menor_vizinho;
-assign distancia_mix = top_wr_fonte_in ? 0: lvv_distancia;
+// assign atualizar_mix = top_wr_fonte_in ? 1'b1: lvv_atualizar;
+// assign endereco_mix = top_wr_fonte_in ? top_addr_fonte_in: lvv_endereco;
+// assign menor_vizinho_mix = top_wr_fonte_in ? 0: lvv_menor_vizinho;
+// assign distancia_mix = top_wr_fonte_in ? 0: lvv_distancia;
 
 // Salvando a fonte e o destino
 always @(posedge clk or negedge rst_n) begin
@@ -209,20 +220,27 @@ avaliador_ativos
             .ADDR_WIDTH(ADDR_WIDTH),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
             .CRITERIO_WIDTH(CRITERIO_WIDTH),
+            .NUM_EA(NUM_EA),
             .CUSTO_WIDTH(CUSTO_WIDTH)
         )
         avaliador_ativos_u0
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
-            .remover_aprovados_in(cme_atualizar_buffer),
+            // .remover_aprovados_in(cme_atualizar_buffer),
             .lvv_pronto_in(lvv_pronto),
-            .desativar_in(lvv_desativar),
-            .atualizar_in(atualizar_mix),
-            .endereco_in(endereco_mix),
-            .menor_vizinho_in(menor_vizinho_mix),
-            .distancia_in(distancia_mix),
-            .anterior_in(lvv_anterior),
+            
+            .top_atualizar_fonte_in(top_wr_fonte_in),
+            .top_endereco_fonte_in(top_addr_fonte_in),
+
+            .lvv_aa_desativar_in(lvv_aa_desativar),
+            .lvv_aa_atualizar_in(lvv_aa_atualizar),
+            .lvv_aa_vizinho_valido_in(lvv_aa_vizinho_valido),
+            .lvv_aa_endereco_in(lvv_aa_endereco),
+            .lvv_aa_menor_vizinho_in(lvv_aa_menor_vizinho),
+            .lvv_aa_distancia_in(lvv_aa_distancia),
+            .lvv_aa_anterior_in(lvv_aa_anterior),
+
             .cme_atualizar_classificacao_in(cme_atualizar_classificacao),
             .aa_aprovado_out(aa_aprovado),
             .aa_endereco_out(aa_endereco),
@@ -231,6 +249,7 @@ avaliador_ativos
             .aa_ocupado_out(aa_ocupado),
             .aa_pronto_out(aa_pronto),
             .aa_anterior_data_out(aa_anterior_data),
+            .aa_atualizar_ready_out(aa_atualizar_ready),
             .aa_tem_ativo_out(aa_tem_ativo)
         );
 
@@ -255,6 +274,7 @@ localizador_vizinhos_validos8
             .NUM_NA(NUM_NA),
             .UMA_RELACAO_WIDTH(UMA_RELACAO_WIDTH),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
+            .NUM_EA(NUM_EA),
             .CUSTO_WIDTH(CUSTO_WIDTH)
             // .DATA_WIDTH(DATA_WIDTH)
         )
@@ -269,14 +289,17 @@ localizador_vizinhos_validos8
             .aa_aprovado_in(buff_aa_aprovado),
             .aa_endereco_in(buff_aa_endereco),
             .aa_distancia_in(buff_aa_distancia),
+            .aa_atualizar_ready_in(aa_atualizar_ready),
             // .aa_tem_ativo_in(aa_tem_ativo),
             // .aa_tem_aprovado_in(aa_tem_aprovado),
-            .lvv_desativar_out(lvv_desativar),
-            .lvv_atualizar_out(lvv_atualizar),
-            .lvv_endereco_out(lvv_endereco),
-            .lvv_menor_vizinho_out(lvv_menor_vizinho),
-            .lvv_distancia_out(lvv_distancia),
-            .lvv_anterior_out(lvv_anterior),
+            .lvv_desativar_out(lvv_aa_desativar),
+            .lvv_atualizar_out(lvv_aa_atualizar),
+            .lvv_vizinho_valido_out(lvv_aa_vizinho_valido),
+            .lvv_endereco_out(lvv_aa_endereco),
+            .lvv_menor_vizinho_out(lvv_aa_menor_vizinho),
+            .lvv_distancia_out(lvv_aa_distancia),
+            .lvv_anterior_out(lvv_aa_anterior),
+
             .lvv_estabelecidos_write_en_out(lvv_estabelecidos_write_en),
             .lvv_estabelecidos_write_addr_out(lvv_estabelecidos_write_addr),
             .lvv_anterior_data_out(lvv_anterior_data),

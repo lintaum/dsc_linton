@@ -96,15 +96,14 @@ class AvaliadorAtivos:
         ativos = ''
         for no in self.buffer_ativos.values():
             if no.ativo:
-                ativos = ativos + f"{no.endereco}, "
-        if debug_aa:
-            print("Ativos: " + ativos)
+                ativos = ativos + f"[Addr: {no.endereco}, Dist: {no.distancia}, Crit: {no.criterio}, Menor {no.menor_vizinho}], "
+        print("Ativos: " + ativos)
 
     def get_aprovados_no_buffer(self):
         criterio = self.get_criterio_out_no_buffer()
         if debug_aa:
             print(f"Critério geral: {criterio}")
-        self.print_ativos()
+            self.print_ativos()
         aprovados = []
         for endereco, no in self.buffer_ativos.items():
             if no.distancia <= criterio and no.ativo:

@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : no_ativo.v
 //  Created On    : 2022-08-30 07:30:13
-//  Last Modified : 2022-10-21 14:33:01
+//  Last Modified : 2023-01-11 14:49:06
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -21,7 +21,7 @@ module no_ativo
 		(/*autoport*/
 			input clk,
 			input rst_n,
-			input remover_aprovados_in,
+			// input remover_aprovados_in,
 			input [CUSTO_WIDTH-1:0] menor_vizinho_in,
 			input [DISTANCIA_WIDTH-1:0] distancia_in,
 			input [CRITERIO_WIDTH-1:0] ca_criterio_geral_in,
@@ -43,16 +43,23 @@ module no_ativo
 //Local Parameters
 
 //Wires
-wire ativar, atualizar, nova_menor_distancia, aprovado, desativar;
+
+wire ativar, atualizar; 
+wire nova_menor_distancia; 
+wire aprovado;
+// wire desativar;
+wire desativar_aprovado;
 //Registers
 reg [CUSTO_WIDTH-1:0] menor_vizinho_r;
 //General Purpose Signals
 //*******************************************************
 assign ativar = (atualizar_in & !na_ativo_out) & ga_habilitar_in;
-assign desativar = (desativar_in & na_ativo_out) & ga_habilitar_in;
+// assign desativar = desativar_in & aprovado;
+// assign desativar = (desativar_in & na_ativo_out) & ga_habilitar_in;
+assign desativar_aprovado = desativar_in & aprovado;
 assign atualizar = (atualizar_in & na_ativo_out) & ga_habilitar_in;
 assign nova_menor_distancia = na_distancia_out > distancia_in;
-assign aprovado = !desativar & (ca_criterio_geral_in >= na_distancia_out) & na_ativo_out;
+assign aprovado = (ca_criterio_geral_in >= na_distancia_out) & na_ativo_out;
 
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
@@ -83,7 +90,7 @@ end
 
 always @(posedge clk or negedge rst_n) begin
 	if (!rst_n) begin
-		na_endereco_out <= {ADDR_WIDTH{1'b0}};
+		na_endereco_out <= {ADDR_WIDTH{1'b1}};
 	end
 	else begin
 		// Momento de ativação
@@ -117,12 +124,11 @@ always @(posedge clk or negedge rst_n) begin
 		na_ativo_out <= {1'b0};
 	end
 	else begin
-		if (ga_habilitar_in) begin
-			if (atualizar_in)
-				na_ativo_out <= 1'b1;
-			else if (desativar_in)
-			// else if (!atualizar_in & desativar_in)
-				na_ativo_out <= 1'b0;
+		if (ga_habilitar_in && atualizar_in) begin
+			na_ativo_out <= 1'b1;
+		end
+		else if (desativar_aprovado) begin
+			na_ativo_out <= 1'b0;
 		end
 	end
 end

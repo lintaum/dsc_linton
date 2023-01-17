@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : controlador_maquina_estados.v
 //  Created On    : 2022-10-06 08:19:57
-//  Last Modified : 2022-10-25 10:33:24
+//  Last Modified : 2023-01-12 10:06:12
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -39,7 +39,8 @@ localparam STATE_WIDTH = 3;
 
 localparam ST_IDLE = 0,
 		   ST_INICIALIZAR = 1,
-		   ST_TEM_ATIVO = 2,
+		   ST_ATUALIZAR_CLASSIFICACAO = 2,
+           ST_TEM_ATIVO = 3,
            ST_ATUALIZAR_BUFFER = 4,
 		   ST_EXPANDIR_ATUALIZAR = 5,
 		   ST_CONSTRUIR_CAMINHO = 6,
@@ -70,7 +71,9 @@ always @(*) begin
             ST_INICIALIZAR:
                 // Insere a fonte no avaliador de ativos
                 if (tem_ativo_in && aa_pronto_in)
-                    next_state = ST_TEM_ATIVO;
+                    next_state = ST_ATUALIZAR_CLASSIFICACAO;
+            ST_ATUALIZAR_CLASSIFICACAO:
+                next_state = ST_TEM_ATIVO;
             ST_TEM_ATIVO:
                 // Verifica se existem nós ativos a serem analisados
                 if (aa_pronto_in)
@@ -84,7 +87,7 @@ always @(*) begin
             ST_EXPANDIR_ATUALIZAR:
                 // Encontra os vizizinhos de um nó e atualiza no AA
                 if (lvv_pronto_in)
-                    next_state = ST_TEM_ATIVO;
+                    next_state = ST_ATUALIZAR_CLASSIFICACAO;
             ST_CONSTRUIR_CAMINHO:
                 if (caminho_pronto_in)
                     next_state = ST_PRONTO;
@@ -102,14 +105,14 @@ assign caminho_pronto_out = state == ST_PRONTO;
 assign iniciar_out = state == ST_INICIALIZAR;
 assign construir_caminho_out = state == ST_CONSTRUIR_CAMINHO;
 assign atualizar_buffer_out = state == ST_ATUALIZAR_BUFFER && aa_pronto_in;
-assign atualizar_classificacao_out = state == ST_TEM_ATIVO || iniciar_in;
+assign atualizar_classificacao_out = state == ST_ATUALIZAR_CLASSIFICACAO || iniciar_in;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         expandir_out <= 1'b0;
     end
     else begin
-        expandir_out = state == ST_EXPANDIR_ATUALIZAR;
+        expandir_out <= state==ST_ATUALIZAR_BUFFER && next_state == ST_EXPANDIR_ATUALIZAR;
     end
 end
 //*******************************************************

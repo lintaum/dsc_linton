@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_leituras.v
 //  Created On    : 2022-11-25 11:03:38
-//  Last Modified : 2022-11-29 11:45:59
+//  Last Modified : 2023-01-16 08:30:26
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -59,6 +59,7 @@ always @(posedge clk or negedge rst_n) begin
 		proximo_endereco <= {ADDR_WIDTH{1'b0}};
 	end
 	else begin
+		proximo_endereco <= {ADDR_WIDTH{1'b0}};
 		for (k = 0; k < NUM_SOLICITACOES; k = k + 1) begin
 		   if (lvv_read_en_in[k] == 1'b1)
 		   		proximo_endereco <= k;

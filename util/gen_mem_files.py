@@ -62,6 +62,7 @@ def salvar_param_sim(**kwargs):
     if 'max_bits_relacao' in kwargs:
         max_bits_relacao = kwargs['max_bits_relacao']
         text_file.write(f"`define ADDR_WIDTH {kwargs['max_bits_relacao']}\n")
+        # text_file.write(f"`define ADDR_WIDTH 11\n")
 
     if 'fonte' in kwargs:
         text_file.write(f"`define FONTE {32}'d{kwargs['fonte']}\n")
@@ -82,7 +83,10 @@ def salvar_param_sim(**kwargs):
         text_file.write(f"`define DISTANCIA_WIDTH {32}'d{kwargs['distancia_width']}\n")
 
     if 'max_ativos' in kwargs:
-        text_file.write(f"`define MAX_ATIVOS {32}'d{kwargs['max_ativos']}\n")
+        if kwargs['max_ativos'] < 64:
+            text_file.write(f"`define MAX_ATIVOS 32'd64\n")
+        else:
+            text_file.write(f"`define MAX_ATIVOS {32}'d{kwargs['max_ativos']}\n")
 
     if 'menor_caminho' in kwargs:
         texto = "`define MENOR_CAMINHO {"
