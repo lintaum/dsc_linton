@@ -44,7 +44,7 @@ logic top_wr_fonte_in;
 //*******************************************************
 //clock and reset
 //*******************************************************
-localparam CLK_PERIOD = 5;
+localparam CLK_PERIOD = 9;
 localparam RST_PERIOD = 2*CLK_PERIOD;
 
 initial begin
@@ -104,9 +104,25 @@ initial begin
      verificar_distancia();
 end
 
+// initial begin
+//      verificar_ca();
+// end
+
 //*******************************************************
 //Tasks
 //*******************************************************
+// task verificar_ca();
+//     forever begin
+//         @(posedge top_u0.clk);
+//         if (top_u0.avaliador_ativos_u0.classificar_ativo_u0.ca_pronto_o) begin
+//             if (top_u0.avaliador_ativos_u0.classificar_ativo_u0.ca_criterio_geral_tmp != top_u0.avaliador_ativos_u0.classificar_ativo_u0.ca_criterio_geral_out) begin
+//                 $display("Criterio out diferente", );
+//                 $stop();
+//             end
+//         end
+//     end
+// endtask : verificar_ca
+
 task verificar();
      forever begin
                  @(posedge top_u0.clk);

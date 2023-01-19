@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2023-01-19 11:14:26
+//  Last Modified : 2023-01-19 14:56:05
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -129,4 +129,62 @@ comparador_na
 		.data_out(ca_criterio_geral_out)
 	);
 
+
+
+//*******************************************************
+//Versão antiga
+//*******************************************************
+// wire parar_contagem2;
+// reg [COUNT_WIDTH-1:0] count;
+// reg [CRITERIO_WIDTH-1:0] ca_criterio_geral_tmp;
+// reg ca_pronto_tmp;
+// assign parar_contagem2 = count == NUM_NA-1;
+
+
+// always @(posedge clk or negedge rst_n) begin
+//    if (!rst_n) begin
+//       count <= {COUNT_WIDTH{1'b0}};
+//    end
+//    else begin
+//    		if (aa_atualizar_in)
+//          	count <= 1;
+//    		else if (parar_contagem2) begin
+//      		count <= {COUNT_WIDTH{1'b0}};
+//       	end
+//       	else if (aa_atualizar_in || count != 0)
+//       		count <= count + 1'b1;
+//    end
+// end
+
+// //*******************************************************
+// //Outputs
+// //*******************************************************
+
+// // Otimizar essa lógica para paralelo
+// always @(posedge clk or negedge rst_n) begin
+// 	if (!rst_n) begin
+// 		ca_criterio_geral_tmp <= {CRITERIO_WIDTH{1'b1}};
+// 	end
+// 	else begin			
+// 		if (aa_atualizar_in)
+// 			if (na_ativo_in[0])
+// 				ca_criterio_geral_tmp = na_criterio_2d[0];
+// 			else
+// 				ca_criterio_geral_tmp <= {CRITERIO_WIDTH{1'b1}};
+// 		else if ((ca_criterio_geral_tmp > na_criterio_2d[count]) & na_ativo_in[count])
+// 			ca_criterio_geral_tmp <= na_criterio_2d[count];
+// 	end
+// end
+
+// always @(posedge clk or negedge rst_n) begin
+// 	if (!rst_n) begin
+// 		ca_pronto_tmp <= 1'b0;
+// 	end
+// 	else begin
+// 		if (aa_atualizar_in)
+// 			ca_pronto_tmp <= 1'b0;
+// 		else
+// 			ca_pronto_tmp <= parar_contagem2;
+// 	end
+// end
 endmodule

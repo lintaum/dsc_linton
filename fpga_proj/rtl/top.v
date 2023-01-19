@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2023-01-12 08:53:31
+//  Last Modified : 2023-01-19 13:18:32
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -111,21 +111,20 @@ wire [NUM_PORTS-1:0] gma_obstaculos_read_data;
 // wire [DISTANCIA_WIDTH-1:0] distancia_mix;
 //Registers
 reg [ADDR_WIDTH-1:0] fonte, destino;
+reg top_wr_fonte_in_r;
 //*******************************************************
 //General Purpose Signals
 //*******************************************************
-// assign atualizar_mix = top_wr_fonte_in ? 1'b1: lvv_atualizar;
-// assign endereco_mix = top_wr_fonte_in ? top_addr_fonte_in: lvv_endereco;
-// assign menor_vizinho_mix = top_wr_fonte_in ? 0: lvv_menor_vizinho;
-// assign distancia_mix = top_wr_fonte_in ? 0: lvv_distancia;
 
 // Salvando a fonte e o destino
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         fonte <= {ADDR_WIDTH{1'b0}};
         destino <= {ADDR_WIDTH{1'b0}};
+        top_wr_fonte_in_r <= 1'b0;
     end
     else begin
+        top_wr_fonte_in_r <= top_wr_fonte_in;
         if (top_wr_fonte_in) begin
             destino <= top_addr_destino_in;
             fonte <= top_addr_fonte_in;
@@ -167,7 +166,7 @@ gerenciador_estabelecidos
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
-            .soft_reset_n(!top_wr_fonte_in),
+            .soft_reset_n(!top_wr_fonte_in_r),
             .write_en_in(lvv_estabelecidos_write_en),
             .write_addr_in(lvv_estabelecidos_write_addr),
             .read_addr_in(lvv_estabelecidos_read_addr),
@@ -197,7 +196,7 @@ controlador_maquina_estados
         (/*autoport*/
             .clk(clk),
             .rst_n(rst_n),
-            .iniciar_in(top_wr_fonte_in),
+            .iniciar_in(top_wr_fonte_in_r),
             .tem_ativo_in(aa_tem_ativo),
             .lvv_pronto_in(lvv_pronto),
             .aa_pronto_in(aa_pronto),
@@ -229,8 +228,8 @@ avaliador_ativos
             // .remover_aprovados_in(cme_atualizar_buffer),
             .lvv_pronto_in(lvv_pronto),
             
-            .top_atualizar_fonte_in(top_wr_fonte_in),
-            .top_endereco_fonte_in(top_addr_fonte_in),
+            .top_atualizar_fonte_in(top_wr_fonte_in_r),
+            .top_endereco_fonte_in(fonte),
 
             .lvv_aa_desativar_in(lvv_aa_desativar),
             .lvv_aa_atualizar_in(lvv_aa_atualizar),
