@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2023-01-16 08:32:17
+//  Last Modified : 2023-01-17 11:28:16
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -67,10 +67,10 @@ integer w, k;
 
 //Wires
 wire [ADDR_WIDTH-1:0] na_endereco_2d [0:NUM_NA-1];
-wire [NUM_NA-1:0] hit [0:NUM_EA-1];
 wire [NUM_EA-1:0] tem_hit;
 wire vazios_analisados;
 //Registers
+reg [NUM_NA-1:0] hit_reg [0:NUM_EA-1];
 //*******************************************************
 // Convertendo sinais
 //*******************************************************
@@ -104,6 +104,7 @@ endgenerate
 reg [COUNT_NA_WIDTH-1:0] proximo_vazio [0:NUM_EA-1];
 reg [NUM_EA-1:0] proximo_vazio_valido;
 reg [COUNT_NA_WIDTH-1:0] count_vazios;
+reg atualizar_in_reg;
 
 assign vazios_analisados = count_vazios == NUM_EA - 1;
 
@@ -149,7 +150,7 @@ end
 //*******************************************************
 //Sinais de controle
 //*******************************************************
-assign ga_ocupado_o = (desativar_in || atualizar_in || ga_desativar_out || ga_atualizar_out) || !vazios_analisados;
+assign ga_ocupado_o = (desativar_in || atualizar_in || atualizar_in_reg || ga_desativar_out || ga_atualizar_out) || !vazios_analisados;
 
 //*******************************************************
 //General Purpose Signals
@@ -159,15 +160,42 @@ assign ga_ocupado_o = (desativar_in || atualizar_in || ga_desativar_out || ga_at
 generate
     for (i = 0; i < NUM_NA; i = i + 1)begin
         assign na_endereco_2d[i] = na_endereco_in[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i];
-        for (j = 0; j < NUM_EA; j = j + 1)begin
-            assign hit[j][i] = ((na_endereco_2d[i] == endereco_2d[j]) && na_ativo_in[i]) ? 1'b1: 1'b0;
-        end
     end
 endgenerate
 
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        atualizar_in_reg <= 1'b1;
+    end
+    else begin
+        atualizar_in_reg <= atualizar_in;
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        for (k = 0; k < NUM_NA; k = k + 1)begin
+            for (w = 0; w < NUM_EA; w = w + 1)begin
+                hit_reg[w][k] <= 1'b0;
+            end
+        end
+    end
+    else begin
+        for (k = 0; k < NUM_NA; k = k + 1)begin
+            for (w = 0; w < NUM_EA; w = w + 1)begin
+                if (((na_endereco_2d[k] == endereco_2d[w]) && na_ativo_in[k]))
+                    hit_reg[w][k] <= 1'b1;
+                else
+                    hit_reg[w][k] <= 1'b0;
+            end
+        end
+    end
+end
+
 generate
     for (j = 0; j < NUM_EA; j = j + 1)begin
-        assign tem_hit[j] = |hit[j];
+        assign tem_hit[j] = |hit_reg[j];
     end
 endgenerate
 //*******************************************************
@@ -183,15 +211,14 @@ always @(posedge clk or negedge rst_n) begin
         if (top_atualizar_fonte_in) 
             ga_habilitar_out <= {{(NUM_NA-1){1'b0}}, 1'b1};
         else begin
-            if (atualizar_in)
+            if (atualizar_in_reg)
                 for (k = 0; k < NUM_EA; k = k + 1) begin
                     if (vizinho_valido_in[k]) begin
                         if (tem_hit[k])
                             for (w = 0; w < NUM_NA; w = w + 1) begin
-                                if (hit[k][w]   )
+                                if (hit_reg[k][w]   )
                                     ga_habilitar_out[w] <= 1'b1;
                             end
-                            // ga_habilitar_out[k] <= ga_habilitar_out | hit[k];
                         else begin
                             if (proximo_vazio_valido[k])
                                 ga_habilitar_out[proximo_vazio[k]] <= 1'b1;
@@ -227,13 +254,12 @@ always @(posedge clk or negedge rst_n) begin
         end
         else begin
             ga_desativar_out <= desativar_in;
-            ga_atualizar_out <= atualizar_in;
-            if (atualizar_in) begin
+            ga_atualizar_out <= atualizar_in_reg;
+            if (atualizar_in_reg) begin
                 for (k = 0; k < NUM_EA; k = k + 1) begin
-                    // TODO: Falta corrigir para quando tiver hit
                     if (tem_hit[k]) begin
                         for (w = 0; w < NUM_NA; w = w + 1) begin
-                            if (hit[k][w]==1) begin
+                            if (hit_reg[k][w]==1) begin
                                 ga_endereco_2d[w] <= endereco_2d[k];
                                 ga_menor_vizinho_2d[w] <= menor_vizinho_2d[k];
                                 ga_distancia_2d[w] <= distancia_2d[k];
@@ -246,7 +272,6 @@ always @(posedge clk or negedge rst_n) begin
                         ga_distancia_2d[proximo_vazio[k]] <= distancia_2d[k];
                     end
                 end
-
                 ga_anterior_out <= anterior_in;
             end
         end

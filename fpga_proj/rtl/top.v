@@ -83,7 +83,6 @@ wire [ADDR_WIDTH-1:0] lvv_relacoes_rd_addr;
 wire [ADDR_WIDTH-1:0] lvv_obstaculos_rd_addr;
 wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_write_addr;
 wire lvv_estabelecidos_read_en;
-wire [ADDR_WIDTH*NUM_PORTS-1:0] lvv_estabelecidos_read_addr;
 wire lvv_pronto;
 
 wire lvv_aa_desativar;
