@@ -44,7 +44,7 @@ logic top_wr_fonte_in;
 //*******************************************************
 //clock and reset
 //*******************************************************
-localparam CLK_PERIOD = 9;
+localparam CLK_PERIOD = 5;
 localparam RST_PERIOD = 2*CLK_PERIOD;
 
 initial begin
@@ -146,6 +146,16 @@ task verificar();
                              $display("Caminho: Simulacao = %0d, Referencia = %0d", top_u0.gerenciador_memoria_anterior_u0.read_addr_in, menor_caminho_2d[count]);
                         count = count + 1;
                  end
+
+                 // if (top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.ler_fifo && top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.fifo_empty) begin
+                 //    $warning("Leitura na FIFO vazia",);
+                 //    $stop();
+                 // end
+
+                 // if (top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.fifo_full && top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.vazio_atual_pronto) begin
+                 //    $warning("Escrita na FIFO cheia",);
+                 //    $stop();
+                 // end
      end
 endtask : verificar
 
@@ -170,15 +180,12 @@ task mostrar_valores();
 
         if (top_u0.localizador_vizinhos_validos_u0.cme_expandir_in) begin
             
-            $display("Criterio Geral = %0d", top_u0.avaliador_ativos_u0.ca_criterio_geral);
+            $display("\nCriterio Geral = %0d", top_u0.avaliador_ativos_u0.ca_criterio_geral);
             for (int o = 0; o < NUM_NA; o++) begin
                 if (top_u0.avaliador_ativos_u0.aa_aprovado_out[o])
                     $display("Estabelecido = %0d, Distancia = %0d, Criterio = %0d, Posição no AA = %0d", top_u0.avaliador_ativos_u0.na_endereco_2d[o], top_u0.avaliador_ativos_u0.na_distancia_2d[o], top_u0.avaliador_ativos_u0.na_criterio_2d[o], o);
-            end
-
-            for (int o = 0; o < NUM_NA; o++) begin
-                if (top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.na_ativo_in[o])
-                    $display("No ativo = %0d, Criterio = %0d, Distancia = %0d", top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.na_endereco_2d[o], top_u0.avaliador_ativos_u0.na_criterio_2d[o], top_u0.avaliador_ativos_u0.na_distancia_2d[o]);
+                else if (top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.na_ativo_in[o])
+                    $display("No ativo = %0d, Criterio = %0d, Distancia = %0d, Posição no AA = %0d", top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.na_endereco_2d[o], top_u0.avaliador_ativos_u0.na_criterio_2d[o], top_u0.avaliador_ativos_u0.na_distancia_2d[o], o);
             end
             
         end

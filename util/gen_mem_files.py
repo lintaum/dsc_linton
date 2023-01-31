@@ -86,7 +86,8 @@ def salvar_param_sim(**kwargs):
         if kwargs['max_ativos'] < 64:
             text_file.write(f"`define MAX_ATIVOS 32'd64\n")
         else:
-            text_file.write(f"`define MAX_ATIVOS {32}'d{kwargs['max_ativos']}\n")
+            maximo_prox_8 = kwargs['max_ativos'] + (8 - kwargs['max_ativos']%8)
+            text_file.write(f"`define MAX_ATIVOS {32}'d{maximo_prox_8}\n")
 
     if 'menor_caminho' in kwargs:
         texto = "`define MENOR_CAMINHO {"
