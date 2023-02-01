@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_leituras.v
 //  Created On    : 2022-11-25 11:03:38
-//  Last Modified : 2023-02-01 09:17:33
+//  Last Modified : 2023-02-01 10:53:50
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -54,27 +54,27 @@ endgenerate
 //*******************************************************
 assign tem_solicitao = |lvv_read_en_in;
 
-// always @(posedge clk or negedge rst_n) begin
-// 	if (!rst_n) begin
-// 		proximo_endereco <= {ADDR_WIDTH{1'b0}};
-// 	end
-// 	else begin
-// 		proximo_endereco <= {ADDR_WIDTH{1'b0}};
-// 		for (k = 0; k < NUM_EA; k = k + 1) begin
-// 		   if (lvv_read_en_in[k] == 1'b1)
-// 		   		proximo_endereco <= k;
-// 		end
-// 	end
-// end
-
-
-always @(*) begin
-	proximo_endereco = {ADDR_WIDTH{1'b0}};
-	for (k = 0; k < NUM_EA; k = k + 1) begin
-	   if (lvv_read_en_in[k] == 1'b1)
-	   		proximo_endereco = k;
+always @(posedge clk or negedge rst_n) begin
+	if (!rst_n) begin
+		proximo_endereco <= {ADDR_WIDTH{1'b0}};
+	end
+	else begin
+		// proximo_endereco <= {ADDR_WIDTH{1'b0}};
+		for (k = 0; k < NUM_EA; k = k + 1) begin
+		   if (lvv_read_en_in[k] == 1'b1)
+		   		proximo_endereco <= k;
+		end
 	end
 end
+
+
+// always @(*) begin
+// 	proximo_endereco = {ADDR_WIDTH{1'b0}};
+// 	for (k = 0; k < NUM_EA; k = k + 1) begin
+// 	   if (lvv_read_en_in[k] == 1'b1)
+// 	   		proximo_endereco = k;
+// 	end
+// end
 //*******************************************************
 //Outputs
 //*******************************************************

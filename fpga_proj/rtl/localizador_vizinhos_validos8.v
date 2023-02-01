@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos8.v
 //  Created On    : 2022-11-22 10:07:48
-//  Last Modified : 2023-02-01 08:28:54
+//  Last Modified : 2023-02-01 09:46:03
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -256,7 +256,7 @@ always @(*) begin
             next_state = ST_EXPANDIR_APROVADO;
         // 3
         ST_EXPANDIR_APROVADO:
-                next_state = ST_EA_OCUPADO;
+            next_state = ST_EA_OCUPADO;
         // 4
         ST_EA_OCUPADO:
             if (!tem_aprovado)
