@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : classificar_ativo.v
 //  Created On    : 2022-08-30 09:59:30
-//  Last Modified : 2023-01-19 14:56:05
+//  Last Modified : 2023-01-31 10:40:01
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -32,7 +32,7 @@ module classificar_ativo
 //*******************************************************
 //Local Parameters
 localparam COUNT_WIDTH = $clog2(NUM_NA) + 1;
-localparam NUM_COMPARADOR = 8;
+localparam NUM_COMPARADOR = 10;
 
 genvar i;
 integer w;

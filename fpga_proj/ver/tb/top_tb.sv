@@ -34,6 +34,7 @@ localparam UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH;
 localparam RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH);
 localparam NUM_NA = `MAX_ATIVOS;
 parameter NUM_EA = 8;
+parameter NUM_PORTS = 8;
 //Wires
 genvar i;
 logic clk;
@@ -168,7 +169,7 @@ task mostrar_valores();
     forever begin
         @(posedge top_u0.clk);
         if (top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.atualizar_in) begin
-            for (int o = 0; o < NUM_EA; o++) begin
+            for (int o = 0; o < NUM_PORTS; o++) begin
                 if (top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.vizinho_valido_in[o])
                     $display("Endereço a ser atualizado no AA = %0d, Distância = %0d, Anterior = %0d", top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.endereco_2d[o], top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.distancia_2d[o], top_u0.avaliador_ativos_u0.gerenciador_ativos_u0.anterior_in);
             end
@@ -243,6 +244,7 @@ top
                         .CRITERIO_WIDTH(CRITERIO_WIDTH),
                         .CUSTO_WIDTH(CUSTO_WIDTH),
                         .RELACOES_DATA_WIDTH(RELACOES_DATA_WIDTH),
+                        .NUM_EA(NUM_EA),
                         .NUM_NA(NUM_NA)
                 )
                 top_u0

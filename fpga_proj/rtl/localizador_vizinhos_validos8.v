@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos8.v
 //  Created On    : 2022-11-22 10:07:48
-//  Last Modified : 2023-01-16 13:02:13
+//  Last Modified : 2023-02-01 08:28:54
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -19,7 +19,6 @@ module localizador_vizinhos_validos8
                   parameter NUM_READ_PORTS = 8,
                   parameter NUM_NA = 4,
                   parameter NUM_EA = 8,
-                  parameter NUM_SOLICITACOES = NUM_EA,
                   parameter CUSTO_WIDTH = 4,
                   parameter UMA_RELACAO_WIDTH = ADDR_WIDTH+CUSTO_WIDTH,
                   parameter RELACOES_DATA_WIDTH = MAX_VIZINHOS*(UMA_RELACAO_WIDTH)
@@ -76,10 +75,16 @@ localparam ST_IDLE = 4'd0,
            ST_FINALIZAR = 4'd5;
 localparam EA_GL_ADDR_WIDTH = ADDR_WIDTH*NUM_READ_PORTS;
 localparam COUNT_PROXIMO_APROVADO_WIDTH = $clog2(NUM_NA);
+localparam COUNT_EA_WIDTH = $clog2(NUM_EA);
 //registers
+reg [COUNT_EA_WIDTH-1:0] count_ea;
 reg [STATE_WIDTH-1:0] state, next_state;
 reg [NUM_NA-1:0] aprovados_reg;
 reg [COUNT_PROXIMO_APROVADO_WIDTH-1:0] proximo_aprovado;
+
+reg [NUM_EA-1:0] lvv_escrever_aprovado;
+reg [ADDR_WIDTH-1:0] lvv_aprovado_addr;
+reg [DISTANCIA_WIDTH-1:0] lvv_aprovado_distancia;
 //wires
 wire [ADDR_WIDTH-1:0] aa_endereco_2d [0:NUM_NA-1];
 wire [ADDR_WIDTH-1:0] aa_anterior_data_2d [0:NUM_NA-1];
@@ -90,26 +95,22 @@ wire [RELACOES_DATA_WIDTH*NUM_READ_PORTS-1:0] gl_relacoes_rd_data;
 wire [NUM_READ_PORTS-1:0] gl_obstaculos_rd_data;
 wire [NUM_READ_PORTS-1:0] gl_estabelecidos_rd_data;
 
-wire [NUM_SOLICITACOES-1:0] gl_relacoes_ready;
-wire [NUM_SOLICITACOES-1:0] lvv_obstaculos_ready;
-wire [NUM_SOLICITACOES-1:0] lvv_estabelecido_ready;
+wire [NUM_EA-1:0] gl_relacoes_ready;
+wire [NUM_EA-1:0] lvv_obstaculos_ready;
+wire [NUM_EA-1:0] lvv_estabelecido_ready;
 
-wire [NUM_SOLICITACOES-1:0] ea_relacoes_rd_enable;
-wire [NUM_SOLICITACOES-1:0] ea_obstaculos_rd_enable;
-wire [NUM_SOLICITACOES-1:0] ea_estabelecido_rd_enable;
+wire [NUM_EA-1:0] ea_relacoes_rd_enable;
+wire [NUM_EA-1:0] ea_obstaculos_rd_enable;
+wire [NUM_EA-1:0] ea_estabelecido_rd_enable;
 
-wire [ADDR_WIDTH*NUM_READ_PORTS*NUM_SOLICITACOES-1:0] ea_relacoes_rd_addr;
-wire [ADDR_WIDTH*NUM_READ_PORTS*NUM_SOLICITACOES-1:0] ea_obstaculos_rd_addr;
-wire [ADDR_WIDTH*NUM_READ_PORTS*NUM_SOLICITACOES-1:0] ea_estabelecidos_rd_addr;
+wire [ADDR_WIDTH*NUM_READ_PORTS*NUM_EA-1:0] ea_relacoes_rd_addr;
+wire [ADDR_WIDTH*NUM_READ_PORTS*NUM_EA-1:0] ea_obstaculos_rd_addr;
+wire [ADDR_WIDTH*NUM_READ_PORTS*NUM_EA-1:0] ea_estabelecidos_rd_addr;
 
-wire [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_relacoes_rd_addr_2d [0:NUM_SOLICITACOES-1];
-wire [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_obstaculos_rd_addr_2d [0:NUM_SOLICITACOES-1];
-wire [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_estabelecidos_rd_addr_2d [0:NUM_SOLICITACOES-1];
+wire [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_relacoes_rd_addr_2d [0:NUM_EA-1];
+wire [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_obstaculos_rd_addr_2d [0:NUM_EA-1];
+wire [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_estabelecidos_rd_addr_2d [0:NUM_EA-1];
 wire todos_ea_prontos;
-
-reg [NUM_EA-1:0] lvv_escrever_aprovado;
-reg [ADDR_WIDTH-1:0] lvv_aprovado_addr;
-reg [DISTANCIA_WIDTH-1:0] lvv_aprovado_distancia;
 
 wire [NUM_EA-1:0] oe_atualizar_ready;
 wire [NUM_EA-1:0] ea_pronto;
@@ -148,7 +149,7 @@ endgenerate
 
 // endereços dos expansores de aprovado para o gerenciador de leitura
 generate
-    for (i = 0; i < NUM_SOLICITACOES; i = i + 1) begin:convert_dimension_ea_gl
+    for (i = 0; i < NUM_EA; i = i + 1) begin:convert_dimension_ea_gl
         assign ea_relacoes_rd_addr[EA_GL_ADDR_WIDTH*i+EA_GL_ADDR_WIDTH-1:EA_GL_ADDR_WIDTH*i] = ea_relacoes_rd_addr_2d[i];
         assign ea_obstaculos_rd_addr[EA_GL_ADDR_WIDTH*i+EA_GL_ADDR_WIDTH-1:EA_GL_ADDR_WIDTH*i] = ea_obstaculos_rd_addr_2d[i];
         assign ea_estabelecidos_rd_addr[EA_GL_ADDR_WIDTH*i+EA_GL_ADDR_WIDTH-1:EA_GL_ADDR_WIDTH*i] = ea_estabelecidos_rd_addr_2d[i];
@@ -164,9 +165,6 @@ generate
         assign ea_anterior_1d[ADDR_WIDTH*i+ADDR_WIDTH-1:ADDR_WIDTH*i] = ea_anterior[i];
     end
 endgenerate
-
-localparam COUNT_EA_WIDTH = $clog2(NUM_EA);
-reg [COUNT_EA_WIDTH-1:0] count_ea;
 
 always @(posedge clk or negedge rst_n) begin
    if (!rst_n) begin
@@ -217,10 +215,10 @@ end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        proximo_aprovado <= 0;
+        proximo_aprovado <= {COUNT_PROXIMO_APROVADO_WIDTH{1'b0}};
     end
     else begin
-        proximo_aprovado <= 0;
+        proximo_aprovado <= {COUNT_PROXIMO_APROVADO_WIDTH{1'b0}};
         for (w = 0; w < NUM_NA; w = w +1) begin
             if (aprovados_reg[w]==1)
                 proximo_aprovado <= w;
@@ -267,7 +265,7 @@ always @(*) begin
                 next_state = ST_EXPANDIR_APROVADO;
         // 5
         ST_FINALIZAR:
-            if (todos_ea_prontos && aa_pronto_in)
+            if (todos_ea_prontos)
                 next_state = ST_IDLE;
     endcase
 end
@@ -336,7 +334,6 @@ generate
         end
 endgenerate
 
-
 ordenador_escritas
         #(
             .ADDR_WIDTH(ADDR_WIDTH),
@@ -357,9 +354,7 @@ ordenador_escritas
             .ea_menor_vizinho_in(ea_menor_vizinho_1d),
             .ea_distancia_in(ea_distancia_1d),
             .ea_anterior_in(ea_anterior_1d),
-
             .aa_atualizar_ready_in(aa_atualizar_ready_in),
-
             .oe_atualizar_out(lvv_atualizar_out),
             .oe_vizinho_valido_out(lvv_vizinho_valido_out),
             .oe_endereco_out(lvv_endereco_out),
@@ -368,12 +363,10 @@ ordenador_escritas
             .oe_anterior_out(lvv_anterior_out)
         );
 
-
-
 gerenciador_leituras
     #(
         .NUM_READ_PORTS(NUM_READ_PORTS),
-        .NUM_SOLICITACOES(NUM_SOLICITACOES),
+        .NUM_EA(NUM_EA),
         .DATA_WIDH(RELACOES_DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH)
     )
@@ -392,7 +385,7 @@ gerenciador_leituras
 gerenciador_leituras
     #(
         .NUM_READ_PORTS(NUM_READ_PORTS),
-        .NUM_SOLICITACOES(NUM_SOLICITACOES),
+        .NUM_EA(NUM_EA),
         .DATA_WIDH(1'b1),
         .ADDR_WIDTH(ADDR_WIDTH)
     )
@@ -411,7 +404,7 @@ gerenciador_leituras
 gerenciador_leituras
     #(
         .NUM_READ_PORTS(NUM_READ_PORTS),
-        .NUM_SOLICITACOES(NUM_SOLICITACOES),
+        .NUM_EA(NUM_EA),
         .DATA_WIDH(1'b1),
         .ADDR_WIDTH(ADDR_WIDTH)
     )

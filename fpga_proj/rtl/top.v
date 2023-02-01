@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : top.v
 //  Created On    : 2022-10-04 09:58:39
-//  Last Modified : 2023-01-19 13:18:32
+//  Last Modified : 2023-02-01 08:09:32
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -218,7 +218,7 @@ avaliador_ativos
             .ADDR_WIDTH(ADDR_WIDTH),
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
             .CRITERIO_WIDTH(CRITERIO_WIDTH),
-            .NUM_EA(NUM_EA),
+            .NUM_READ_PORTS(NUM_READ_PORTS),
             .CUSTO_WIDTH(CUSTO_WIDTH)
         )
         avaliador_ativos_u0
@@ -274,7 +274,6 @@ localizador_vizinhos_validos8
             .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
             .NUM_EA(NUM_EA),
             .CUSTO_WIDTH(CUSTO_WIDTH)
-            // .DATA_WIDTH(DATA_WIDTH)
         )
         localizador_vizinhos_validos_u0
         (/*autoport*/

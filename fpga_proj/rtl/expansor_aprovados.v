@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : expansor_aprovados.v
 //  Created On    : 2022-11-23 08:07:40
-//  Last Modified : 2023-01-17 08:07:11
+//  Last Modified : 2023-02-01 08:55:07
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -92,11 +92,12 @@ reg [STATE_WIDTH-1:0] state, next_state;
 reg [ADDR_WIDTH-1:0] endereco_aprovado;
 reg [DISTANCIA_WIDTH-1:0] distancia_aprovado;
 reg [MAX_VIZINHOS-1:0] vizinho_salvo;
-reg [RELACOES_DATA_WIDTH*NUM_READ_PORTS-1:0] gma_relacoes_rd_data_reg;
 reg [COUNT_DISTANCIA_WIDTH-1:0] count_distancia;
 reg [DISTANCIA_WIDTH-1:0] distancias_reg [MAX_VIZINHOS-1:0];
 reg [CUSTO_WIDTH-1:0] menor_vizinho_reg [MAX_VIZINHOS-1:0];
 
+reg [CUSTO_WIDTH-1:0] relacoes_4d_custo_reg [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
+reg [ADDR_WIDTH-1:0] relacoes_4d_addr_reg [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
 //*******************************************************
 //Convertendo dimensões
 //*******************************************************
@@ -147,8 +148,6 @@ generate
 endgenerate
 
 
-reg [CUSTO_WIDTH-1:0] relacoes_4d_custo_reg [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
-reg [ADDR_WIDTH-1:0] relacoes_4d_addr_reg [0:MAX_VIZINHOS*NUM_READ_PORTS-1];
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

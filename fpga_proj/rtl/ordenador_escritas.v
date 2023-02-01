@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : ordenador_escritas.v
 //  Created On    : 2023-01-10 08:23:32
-//  Last Modified : 2023-01-13 10:53:29
+//  Last Modified : 2023-02-01 08:07:42
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -34,10 +34,10 @@ module ordenador_escritas
 			input aa_atualizar_ready_in,
 			input aa_ocupado_in,
             output reg oe_atualizar_out,
-            output reg [NUM_EA-1:0] oe_vizinho_valido_out,
-            output reg [ADDR_WIDTH*NUM_EA-1:0] oe_endereco_out,
-            output reg [CUSTO_WIDTH*NUM_EA-1:0] oe_menor_vizinho_out,
-            output reg [DISTANCIA_WIDTH*NUM_EA-1:0] oe_distancia_out,
+            output reg [NUM_READ_PORTS-1:0] oe_vizinho_valido_out,
+            output reg [ADDR_WIDTH*NUM_READ_PORTS-1:0] oe_endereco_out,
+            output reg [CUSTO_WIDTH*NUM_READ_PORTS-1:0] oe_menor_vizinho_out,
+            output reg [DISTANCIA_WIDTH*NUM_READ_PORTS-1:0] oe_distancia_out,
             output reg [ADDR_WIDTH-1:0] oe_anterior_out
 		);
 //*******************************************************
@@ -81,12 +81,12 @@ end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        proximo_no <= 0;
+        proximo_no <= {ADDR_WIDTH{1'b0}};
     end
     else begin
     	// Bloqueia até finalização da solicitação anterior
     	if (!busy) begin
-	        proximo_no <= 0;
+	        proximo_no <= {ADDR_WIDTH{1'b0}};
 	        for (w = 0; w < NUM_EA; w = w +1) begin
 	            if (ea_atualizar_in[w]==1)
 	                proximo_no <= w;

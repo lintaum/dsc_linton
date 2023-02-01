@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : avaliador_ativos.v
 //  Created On    : 2022-08-30 10:13:25
-//  Last Modified : 2023-01-12 10:01:20
+//  Last Modified : 2023-02-01 07:47:14
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -18,7 +18,6 @@ module avaliador_ativos
       parameter DISTANCIA_WIDTH = 5,
       parameter CRITERIO_WIDTH = DISTANCIA_WIDTH + 1,
       parameter NUM_READ_PORTS = 8,
-      parameter NUM_EA = 8,
       parameter CUSTO_WIDTH = 4
 		)
 		(/*autoport*/
@@ -120,7 +119,7 @@ gerenciador_ativos
         .NUM_NA(NUM_NA),
         .ADDR_WIDTH(ADDR_WIDTH),
         .DISTANCIA_WIDTH(DISTANCIA_WIDTH),
-        .NUM_EA(NUM_EA),
+        .NUM_READ_PORTS(NUM_READ_PORTS),
         .CUSTO_WIDTH(CUSTO_WIDTH)      
     )
     gerenciador_ativos_u0

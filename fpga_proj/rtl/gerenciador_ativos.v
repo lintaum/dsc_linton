@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : gerenciador_ativos.v
 //  Created On    : 2022-08-26 08:34:19
-//  Last Modified : 2023-01-31 10:00:00
+//  Last Modified : 2023-02-01 07:46:32
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -31,8 +31,7 @@ module gerenciador_ativos
             parameter ADDR_WIDTH = 5,
             parameter DISTANCIA_WIDTH = 5,
             parameter CUSTO_WIDTH = 4,
-            parameter NUM_READ_PORTS = 8,
-            parameter NUM_EA = 8
+            parameter NUM_READ_PORTS = 8
         )
         (/*autoport*/
             input clk,
@@ -161,7 +160,7 @@ end
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         count_vazios <= 0;
-        for (w = 0; w < NUM_EA; w = w + 1) begin
+        for (w = 0; w < NUM_READ_PORTS; w = w + 1) begin
             proximo_vazio2[w] <= 0;
             proximo_vazio_valido2[w] <= 0;
         end
@@ -182,7 +181,7 @@ always @(posedge clk or negedge rst_n) begin
                     proximo_vazio_valido2[0] <= 1;
                 end
 
-                for (k = 1; k < NUM_EA; k = k + 1) begin
+                for (k = 1; k < NUM_READ_PORTS; k = k + 1) begin
                     if (na_ativo_in[w]==0 && proximo_vazio_valido2[k-1]==1 && w < proximo_vazio2[k-1]) begin
                         proximo_vazio2[k] <= w;
                         proximo_vazio_valido2[k] <= 1;
