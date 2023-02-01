@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : expansor_aprovados.v
 //  Created On    : 2022-11-23 08:07:40
-//  Last Modified : 2023-02-01 08:55:07
+//  Last Modified : 2023-02-01 11:48:07
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -46,7 +46,7 @@ module expansor_aprovados
             // Enviando nó salvo
             input aa_atualizar_ready_in,
             output reg ea_pronto_out,
-            output reg ea_ocupado_out,
+            output ea_ocupado_out,
             output reg ea_atualizar_out,
             output reg [NUM_READ_PORTS-1:0] ea_vizinho_valido_out,
             output [ADDR_WIDTH*NUM_READ_PORTS-1:0] ea_endereco_out,
@@ -411,19 +411,23 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+reg ea_ocupado_reg;
+
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        ea_ocupado_out <= 1'b0;
+        ea_ocupado_reg <= 1'b0;
     end
     else begin
         if (lvv_escrever_aprovado_in) begin
-            ea_ocupado_out <= 1'b1;
+            ea_ocupado_reg <= 1'b1;
         end
         else if (ea_pronto_out) begin
-            ea_ocupado_out <= 1'b0;
+            ea_ocupado_reg <= 1'b0;
         end
     end
 end
+
+assign ea_ocupado_out = ea_ocupado_reg | lvv_escrever_aprovado_in;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

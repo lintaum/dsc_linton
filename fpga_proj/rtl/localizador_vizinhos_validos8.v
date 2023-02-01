@@ -1,7 +1,7 @@
 //==================================================================================================
 //  Filename      : localizador_vizinhos_validos8.v
 //  Created On    : 2022-11-22 10:07:48
-//  Last Modified : 2023-02-01 09:46:03
+//  Last Modified : 2023-02-01 11:35:45
 //  Revision      : 
 //  Author        : Linton Esteves
 //  Company       : UFBA
@@ -179,6 +179,20 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //*******************************************************
+//Contando os ea ocupados
+//*******************************************************
+reg [COUNT_EA_WIDTH-1:0] num_ea_ocupados;
+wire ea_nao_cheio;
+always @(*) begin
+    num_ea_ocupados = 0;
+    for (w = 0; w < NUM_EA; w = w +1) begin
+        num_ea_ocupados = num_ea_ocupados + ea_ocupado[w];
+    end
+end
+
+assign ea_nao_cheio = num_ea_ocupados < NUM_EA-2;
+
+//*******************************************************
 //Escrevendo no expansor de aprovado
 //*******************************************************
 always @(posedge clk or negedge rst_n) begin
@@ -256,7 +270,12 @@ always @(*) begin
             next_state = ST_EXPANDIR_APROVADO;
         // 3
         ST_EXPANDIR_APROVADO:
-            next_state = ST_EA_OCUPADO;
+            if (!tem_aprovado)
+                next_state = ST_FINALIZAR;
+            else if (!todos_ea_ocupados && ea_nao_cheio)
+                next_state = ST_EXPANDIR_APROVADO;
+            else
+                next_state = ST_EA_OCUPADO;
         // 4
         ST_EA_OCUPADO:
             if (!tem_aprovado)
