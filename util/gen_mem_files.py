@@ -57,6 +57,195 @@ def dict_2_vmem(dict_mem,
     text_file.close()
 
 
+def dict_2_mif(dict_mem,
+                obstaculos,
+                max_bits_relacao=10,
+                max_bits_custo=4,
+                nome_arquivo_relacao="../mem_relacoes.mif",
+                nome_arquivo_obstaculo="../mem_obstaculo.mif",
+                max_relacoes=8):
+
+    """Converte uma memória em python para o formato mif do quartus"""
+    num_nos = len(dict_mem.mem)
+    relacao_str = f'WIDTH=32;\nDEPTH={num_nos*max_relacoes};\nADDRESS_RADIX=UNS;\nDATA_RADIX=UNS;\nCONTENT BEGIN\n'
+    obstaculo_str = f'WIDTH=32;\nDEPTH={num_nos};\nADDRESS_RADIX=UNS;\nDATA_RADIX=UNS;\nCONTENT BEGIN\n'
+    count_addr = 0
+    count_addr_obstaculo = 0
+    valor_maximo_bin = ''
+    for idx2 in range(max_bits_relacao + max_bits_custo):
+        valor_maximo_bin = valor_maximo_bin + "1"
+    valor_maximo_int = int(valor_maximo_bin, 2)
+    for endereco, linha in dict_mem.mem.items():
+        """
+            {} places a variable into a string
+            0 takes the variable at argument position 0
+            : adds formatting options for this variable (otherwise it would represent decimal 6)
+            08 formats the number to eight digits zero-padded on the left
+            b converts the number to its binary representation
+        """
+        linha_relacao = ""
+        count_vizinho = 0
+        # relacao_str = relacao_str + f'\tNo - {(count_addr)/8}\n'
+        for relacao, obstaculo, custo in linha:
+            relacao_bin = ('{0:0' + f"{max_bits_relacao}" + 'b}').format(round_to_bin(relacao, max_bits_relacao))
+            custo_bin = ('{0:0' + f"{max_bits_custo}" + 'b}').format(round_to_bin(custo, max_bits_custo))
+            relacao_custo_bin = relacao_bin + custo_bin
+            # relacao_custo_bin = relacao_bin
+            relacao_custo_int = int(relacao_custo_bin, 2)
+            if len(relacao_bin) > max_bits_relacao or len(custo_bin) > max_bits_custo:
+                break
+            relacao_str = relacao_str + f'{count_addr}\t:{relacao_custo_int};\n'
+            count_addr=count_addr+1
+            count_vizinho = count_vizinho + 1
+
+
+        for idx in range(max_relacoes-count_vizinho):
+            relacao_str = relacao_str + f'{count_addr}\t:{valor_maximo_int};\n'
+            count_addr = count_addr + 1
+
+        if endereco in obstaculos:
+            obstaculo_str = obstaculo_str + f'{count_addr_obstaculo}\t:{1};\n'
+        else:
+            obstaculo_str = obstaculo_str + f'{count_addr_obstaculo}\t:{0};\n'
+        count_addr_obstaculo = count_addr_obstaculo + 1
+
+    relacao_str = relacao_str + f'END;'
+    text_file = open(nome_arquivo_relacao, "w")
+    text_file.write(relacao_str)
+    text_file.close()
+
+    obstaculo_str = obstaculo_str + f'END;'
+    text_file = open(nome_arquivo_obstaculo, "w")
+    text_file.write(obstaculo_str)
+    text_file.close()
+
+def dict_2_vector(dict_mem,
+                obstaculos,
+                max_bits_relacao=10,
+                max_bits_custo=4,
+                nome_arquivo_relacao="../mem_relacoes.txt",
+                nome_arquivo_obstaculo="../mem_obstaculo.txt",
+                max_relacoes=8):
+
+    """Converte uma memória em python para o formato mif do quartus"""
+    num_nos = len(dict_mem.mem)
+    relacao_str = f''
+    obstaculo_str = f''
+    count_addr = 0
+    count_addr_obstaculo = 0
+    valor_maximo_bin = ''
+    for idx2 in range(max_bits_relacao + max_bits_custo):
+        valor_maximo_bin = valor_maximo_bin + "1"
+    valor_maximo_int = int(valor_maximo_bin, 2)
+    for endereco, linha in dict_mem.mem.items():
+        """
+            {} places a variable into a string
+            0 takes the variable at argument position 0
+            : adds formatting options for this variable (otherwise it would represent decimal 6)
+            08 formats the number to eight digits zero-padded on the left
+            b converts the number to its binary representation
+        """
+        linha_relacao = ""
+        count_vizinho = 0
+        # relacao_str = relacao_str + f'\tNo - {(count_addr)/8}\n'
+        for relacao, obstaculo, custo in linha:
+            relacao_bin = ('{0:0' + f"{max_bits_relacao}" + 'b}').format(round_to_bin(relacao, max_bits_relacao))
+            custo_bin = ('{0:0' + f"{max_bits_custo}" + 'b}').format(round_to_bin(custo, max_bits_custo))
+            relacao_custo_bin = relacao_bin + custo_bin
+            # relacao_custo_bin = relacao_bin
+            relacao_custo_int = int(relacao_custo_bin, 2)
+            if len(relacao_bin) > max_bits_relacao or len(custo_bin) > max_bits_custo:
+                break
+            if count_addr == 0:
+                relacao_str = relacao_str + f'{relacao_custo_int}'
+            else:
+                relacao_str = relacao_str + f'\n{relacao_custo_int}'
+            count_addr=count_addr+1
+            count_vizinho = count_vizinho + 1
+
+
+        for idx in range(max_relacoes-count_vizinho):
+            relacao_str = relacao_str + f'\n{valor_maximo_int}'
+            count_addr = count_addr + 1
+
+        if endereco in obstaculos:
+            obstaculo_str = obstaculo_str + f'{1}'
+        else:
+            obstaculo_str = obstaculo_str + f'{0}'
+        obstaculo_str = obstaculo_str + f'\n'
+        count_addr_obstaculo = count_addr_obstaculo + 1
+
+    # relacao_str = relacao_str + f'END;'
+    text_file = open(nome_arquivo_relacao, "w")
+    text_file.write(relacao_str)
+    text_file.close()
+
+    # obstaculo_str = obstaculo_str + f'END;'
+    text_file = open(nome_arquivo_obstaculo, "w")
+    text_file.write(obstaculo_str)
+    text_file.close()
+
+def dict_2_include(dict_mem,
+                obstaculos,
+                max_bits_relacao=10,
+                max_bits_custo=4,
+                nome_arquivo_relacao="../mem_relacoes.h",
+                nome_arquivo_obstaculo="../mem_obstaculo.h",
+                max_relacoes=8):
+
+    """Converte uma memória em python para o formato C"""
+    relacao_str = ''
+    obstaculo_str = ''
+    count_addr = 0
+    count_addr_obstaculo = 0
+    valor_maximo_bin = ''
+    for idx2 in range(max_bits_relacao + max_bits_custo):
+        valor_maximo_bin = valor_maximo_bin + "1"
+    valor_maximo_int = int(valor_maximo_bin, 2)
+    for endereco, linha in dict_mem.mem.items():
+        """
+            {} places a variable into a string
+            0 takes the variable at argument position 0
+            : adds formatting options for this variable (otherwise it would represent decimal 6)
+            08 formats the number to eight digits zero-padded on the left
+            b converts the number to its binary representation
+        """
+        count_vizinho = 0
+
+        for relacao, obstaculo, custo in linha:
+            relacao_bin = ('{0:0' + f"{max_bits_relacao}" + 'b}').format(round_to_bin(relacao, max_bits_relacao))
+            custo_bin = ('{0:0' + f"{max_bits_custo}" + 'b}').format(round_to_bin(custo, max_bits_custo))
+            relacao_custo_bin = relacao_bin + custo_bin
+            # relacao_custo_bin = relacao_bin
+            relacao_custo_int = int(relacao_custo_bin, 2)
+            if len(relacao_bin) > max_bits_relacao or len(custo_bin) > max_bits_custo:
+                break
+
+            relacao_str = relacao_str + f'addRelation(nodes[{count_addr}], nodes[{relacao}], {custo});\n'
+
+            count_vizinho = count_vizinho + 1
+        count_addr = count_addr + 1
+
+
+        # for idx in range(max_relacoes-count_vizinho):
+        #     relacao_str = relacao_str + f'{count_addr}\t:{valor_maximo_int};\n'
+        #     count_addr = count_addr + 1
+
+        if endereco in obstaculos:
+            obstaculo_str = obstaculo_str + f'{count_addr_obstaculo}\t:{1};\n'
+        else:
+            obstaculo_str = obstaculo_str + f'{count_addr_obstaculo}\t:{0};\n'
+        count_addr_obstaculo = count_addr_obstaculo + 1
+
+    text_file = open(nome_arquivo_relacao, "w")
+    text_file.write(relacao_str)
+    text_file.close()
+
+    obstaculo_str = obstaculo_str + f'END;'
+    text_file = open(nome_arquivo_obstaculo, "w")
+    text_file.write(obstaculo_str)
+    text_file.close()
+
 def salvar_param_sim(**kwargs):
     text_file = open("../defines.vh", "w")
     if 'max_bits_relacao' in kwargs:
