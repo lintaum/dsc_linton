@@ -1,0 +1,4 @@
+../utils/dual_port_ram.v  
+../utils/dual_port_ram_reg.v  
+../utils/ram.v
+/home/linton/altera/proj/ips/ram2port_22bits.v
