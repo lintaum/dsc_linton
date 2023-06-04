@@ -12,6 +12,7 @@
 #define CUSTO_WIDTH 4
 
 int SIM = 1;
+int count_for = 0;
 unsigned int array[MAX_NODES*8];
 unsigned int array_obstaculos[MAX_NODES];
 unsigned int resultado;
@@ -29,6 +30,72 @@ typedef struct Node {
     int weights[MAX_RELATIONS];
 } Node;
 
+struct Aprovado {
+    int valor;
+    struct Aprovado* proximo;
+};
+
+// Função para inserir um novo nó no início da lista
+void inserir_lista(struct Aprovado** cabeca, int valor) {
+    // Cria um novo nó
+    struct Aprovado* novoNode = (struct Aprovado*)malloc(sizeof(struct Aprovado));
+    novoNode->valor = valor;
+    novoNode->proximo = *cabeca;
+
+    // Define o novo nó como a cabeça da lista
+    *cabeca = novoNode;
+}
+
+// Função para remover um nó específico da lista
+void remover_lista(struct Aprovado** cabeca, int valor) {
+    struct Aprovado* atual = *cabeca;
+    struct Aprovado* anterior = NULL;
+
+    // Procura pelo nó com o valor especificado
+    while (atual != NULL && atual->valor != valor) {
+    	count_for++;
+        anterior = atual;
+        atual = atual->proximo;
+    }
+
+    // Caso o nó com o valor especificado seja encontrado
+    if (atual != NULL) {
+        // Remove o nó da lista
+        if (anterior != NULL)
+            anterior->proximo = atual->proximo;
+        else
+            *cabeca = atual->proximo;
+
+        free(atual);
+    }
+}
+
+// Função para verificar se um nó está presente na lista
+int verificar_lista(struct Aprovado* cabeca, int valor) {
+    struct Aprovado* atual = cabeca;
+
+    // Procura pelo nó com o valor especificado
+    while (atual != NULL) {
+    	count_for++;
+        if (atual->valor == valor)
+            return 1;
+        atual = atual->proximo;
+    }
+
+    return 0;
+}
+
+
+// Função para imprimir os elementos da lista
+void imprimir_lista(struct Aprovado* cabeca) {
+    struct Aprovado* atual = cabeca;
+
+    while (atual != NULL) {
+        printf("%d ", atual->valor);
+        atual = atual->proximo;
+    }
+    printf("\n");
+}
 
 // Função para criar um novo nó
 Node* createNode(int value) {
@@ -56,16 +123,35 @@ void addRelation(Node* node1, Node* node2, int weight) {
     }
 }
 
+
 // Função para encontrar o nó com a menor distância não visitada
 Node* findMinDistanceNode(Node* nodes[MAX_NODES], int numNodes) {
     int minDistance = INT_MAXIMO;
     Node* minNode = NULL;
 //  Todo: Está muito lento assim, não é necessário analisar todos os nós, as soluções que testei até agora pioram o desempenho
     for (int i = 0; i < numNodes; i++) {
+    	count_for++;
         if (!nodes[i]->visited && nodes[i]->distance < minDistance) {
             minDistance = nodes[i]->distance;
             minNode = nodes[i];
         }
+    }
+    return minNode;
+}
+
+// Função para imprimir os elementos da lista
+Node* findMinDistanceNodeLista(struct Aprovado* cabeca, Node* nodes[MAX_NODES]) {
+    struct Aprovado* atual = cabeca;
+    Node* minNode = NULL;
+    int minDistance = INT_MAXIMO;
+
+    while (atual != NULL) {
+    	count_for++;
+        if (nodes[atual->valor]->distance < minDistance) {
+            minDistance = nodes[atual->valor]->distance;
+            minNode = nodes[atual->valor];
+        }
+        atual = atual->proximo;
     }
     return minNode;
 }
@@ -85,18 +171,24 @@ void dijkstra(Node* nodes[MAX_NODES], int numNodes, unsigned int startNodeValue,
     Node* startNode = NULL;
     Node* endNode = NULL;
 	
+    struct Aprovado* lista_aprovados = NULL;
 	// printf("\Procurando os nos de origem e destino...\n");    
 	
 	startNode = nodes[startNodeValue];
 	endNode = nodes[endNodeValue]; 
+
+    inserir_lista(&lista_aprovados, startNodeValue);
 
     // Inicializa a distância do nó de origem como 0
     startNode->distance = 0;
 
     // Encontra o menor caminho
     for (int i = 0; i < numNodes; i++) {
-        Node* currentNode = findMinDistanceNode(nodes, numNodes);
+        //imprimir_lista(lista_aprovados);
+        //Node* currentNode = findMinDistanceNode(nodes, numNodes);
+        Node* currentNode = findMinDistanceNodeLista(lista_aprovados, nodes);
         currentNode->visited = 1;
+        remover_lista(&lista_aprovados, currentNode->value);
         //printf("\nNo: %d", currentNode->value);
         // Atualiza as distâncias dos nós adjacentes não visitados
         for (int j = 0; j < MAX_RELATIONS; j++) {
@@ -109,7 +201,11 @@ void dijkstra(Node* nodes[MAX_NODES], int numNodes, unsigned int startNodeValue,
 		            int distance = currentNode->distance + currentNode->weights[j];
 		            if (distance < neighbor->distance) {
 		                neighbor->distance = distance;
+                        if (neighbor->parent ==NULL){
+                            inserir_lista(&lista_aprovados, neighbor->value);
+                        }
 		                neighbor->parent = currentNode;
+                        
 		            }
 	            }
 	            else{
@@ -141,7 +237,7 @@ int montar_vetor() {
     unsigned int i, num;
 
     // Abre o arquivo para leitura
-    file = fopen("../ProjetosPycharm/dsc_linton/mem_relacoes.txt", "r");
+    file = fopen("../mem_relacoes.txt", "r");
 
     if (file == NULL) {
         // printf("Erro ao abrir o arquivo.\n");
@@ -180,7 +276,7 @@ int montar_vetor_obstaculos() {
     unsigned int i, num;
 
     // Abre o arquivo para leitura
-    file2 = fopen("../ProjetosPycharm/dsc_linton/mem_obstaculo.txt", "r");
+    file2 = fopen("../mem_obstaculo.txt", "r");
 
     if (file2 == NULL) {
         printf("Erro ao abrir o arquivo.\n");
@@ -207,36 +303,6 @@ int montar_vetor_obstaculos() {
 //    }
 //    printf("\nNumero de nos lidos no arquivo %d\n", i);
 
-    return 0;
-}
-
-int adicionar_relacoes() {
-    // Imprime os inteiros armazenados no vetor
-    unsigned int vizinho, custo;
-    unsigned int vizinho_int;
-    Node* nodes[MAX_NODES];
-    
-//    Inicializando o grafo com os nós vazios
-    for (unsigned int i = 0; i < MAX_NODES; i++) {
-        nodes[i] = createNode(i);
-        // printf("Criado no %d %d\n", i, nodes[i]->value);
-    }
-    // printf("\nGrafo criado...\n");
-    
-    for (unsigned int i = 0; i < MAX_NODES; i++) {
-    	// printf("NO %d:\n", i);
-    	for (unsigned int w=0; w<MAX_RELATIONS;w++){
-    		splitInt(array[i*MAX_RELATIONS+w], &vizinho, &custo);
-    		
-//    			TODO: Colocar Valor máximo de custo
-    		if (custo < 15){
-    			//printf("\tbase: %d\tvizinho: %d\tcusto: %d\n", array[i*MAX_RELATIONS+w], vizinho, custo);
-				// printf("\n\t addRelation base: %d\tvizinho: %d\tcusto: %d", nodes[i]->value, nodes[vizinho]->value, custo);
-				addRelation(nodes[i], nodes[vizinho], custo);
-			}
-		}
-		// printf("\n");        	
-    }
     return 0;
 }
 
@@ -279,7 +345,7 @@ int main() {
    //printf("Fonte %d Destino %d", 0, destino);
 
     dijkstra(nodes, MAX_NODES, 0, MAX_NODES-1);
-
+	printf("\nQuantidade de iteracoes %d\n", count_for); 
     // Libera a memória alocada para os nós
     for (unsigned int i = 0; i < MAX_NODES; i++) {
         free(nodes[i]);
