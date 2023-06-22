@@ -67,8 +67,8 @@ def dict_2_mif(dict_mem,
 
     """Converte uma memória em python para o formato mif do quartus"""
     num_nos = len(dict_mem.mem)
-    relacao_str = f'WIDTH=32;\nDEPTH={num_nos*max_relacoes};\nADDRESS_RADIX=UNS;\nDATA_RADIX=UNS;\nCONTENT BEGIN\n'
-    obstaculo_str = f'WIDTH=32;\nDEPTH={num_nos};\nADDRESS_RADIX=UNS;\nDATA_RADIX=UNS;\nCONTENT BEGIN\n'
+    relacao_str = f'WIDTH=32;\nDEPTH=16384;\nADDRESS_RADIX=UNS;\nDATA_RADIX=UNS;\nCONTENT BEGIN\n'
+    obstaculo_str = f'WIDTH=32;\nDEPTH=2048;\nADDRESS_RADIX=UNS;\nDATA_RADIX=UNS;\nCONTENT BEGIN\n'
     count_addr = 0
     count_addr_obstaculo = 0
     valor_maximo_bin = ''
@@ -109,6 +109,11 @@ def dict_2_mif(dict_mem,
             obstaculo_str = obstaculo_str + f'{count_addr_obstaculo}\t:{0};\n'
         count_addr_obstaculo = count_addr_obstaculo + 1
 
+    if (count_addr < 16383):
+        relacao_str = relacao_str + f'[{count_addr}..{16383}]:0;\n'
+    if (count_addr_obstaculo < 2043):
+        obstaculo_str = obstaculo_str + f'[{count_addr_obstaculo}..{2043}]:0;\n'
+
     relacao_str = relacao_str + f'END;'
     text_file = open(nome_arquivo_relacao, "w")
     text_file.write(relacao_str)
@@ -118,6 +123,11 @@ def dict_2_mif(dict_mem,
     text_file = open(nome_arquivo_obstaculo, "w")
     text_file.write(obstaculo_str)
     text_file.close()
+
+    import shutil
+
+    shutil.copyfile(nome_arquivo_relacao, f'../../../Projetos/NiosDijkstra/mem_relacoes.mif')
+    shutil.copyfile(nome_arquivo_obstaculo, f'../../../Projetos/NiosDijkstra/mem_obstaculo.mif')
 
 def dict_2_vector(dict_mem,
                 obstaculos,
@@ -272,11 +282,20 @@ def salvar_param_sim(**kwargs):
         text_file.write(f"`define DISTANCIA_WIDTH {32}'d{kwargs['distancia_width']}\n")
 
     if 'max_ativos' in kwargs:
-        if kwargs['max_ativos'] < 64:
+        print(f"Max Ativos {kwargs['max_ativos']}")
+        if kwargs['max_ativos'] < 8:
             text_file.write(f"`define MAX_ATIVOS 32'd64\n")
+            print(f"Max Ativos define {8}")
         else:
             maximo_prox_8 = kwargs['max_ativos'] + (8 - kwargs['max_ativos']%8)
             text_file.write(f"`define MAX_ATIVOS {32}'d{maximo_prox_8}\n")
+            print(f"Max Ativos define {maximo_prox_8}")
+
+        # maximo_prox_8 = kwargs['max_ativos'] + (8 - kwargs['max_ativos'] % 8)
+        # text_file.write(f"`define MAX_ATIVOS {32}'d{maximo_prox_8}\n")
+        # print(f"Max Ativos define {maximo_prox_8}")
+
+
 
     if 'menor_caminho' in kwargs:
         texto = "`define MENOR_CAMINHO {"
